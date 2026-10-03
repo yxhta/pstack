@@ -1,0 +1,8 @@
+{
+  "evals": [
+    {"prompt": "Review the pending upstream sync PR without pushing.", "expected_output": "Reads the recorded pin and full diff, checks pristine source and generated output, reports runtime gaps, and makes no external mutation."},
+    {"prompt": "Integrate an upstream change that renames a skill and changes a Cursor dispatch field.", "expected_output": "Uses a source worktree, keeps raw source identical to the incoming SHA, edits only adapters, regenerates to remove the old skill, verifies installation, and prepares a PR without merging."},
+    {"prompt": "Update my installed pstack skills.", "expected_output": "Uses the consumer update path rather than cloning or maintaining the upstream fork."},
+    {"prompt": "The merge conflicts and Codex cannot execute the changed workflow.", "expected_output": "Inspects merge intent, preserves unrelated work, stops on unresolved intent, and names actual runtime validation as unverified."}
+  ]
+}

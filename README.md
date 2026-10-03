@@ -1,5 +1,3 @@
-> **yxhta/pstack:** Claude Code・Codexでの導入と上流同期は [README_PORTABLE.md](README_PORTABLE.md) を参照してください。以下は本家のREADMEです。
-
 # Cursor plugins
 
 Official Cursor plugins for popular developer tools, frameworks, and SaaS products. Each plugin is a standalone directory at the repository root with its own `.cursor-plugin/plugin.json` manifest.

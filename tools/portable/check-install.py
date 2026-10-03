@@ -10,11 +10,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('project', type=Path)
     args = parser.parse_args()
-    source_root = ROOT / 'pstack/skills'
+    source_root = ROOT / 'portable/pstack/skills'
     source_skills = sorted(source_root.glob('*/SKILL.md'))
     for runtime in ('.claude', '.agents'):
         installed_root = args.project.resolve() / runtime / 'skills'
-        assert len(list(installed_root.glob('*/SKILL.md'))) == len(source_skills), runtime
+        assert {p.parent.name for p in installed_root.glob('*/SKILL.md')} == {p.parent.name for p in source_skills}, runtime
+        expected_files = {p.relative_to(source_root).as_posix() for p in source_root.rglob('*') if p.is_file()}
+        installed_files = {p.relative_to(installed_root).as_posix() for p in installed_root.rglob('*') if p.is_file()}
+        assert installed_files == expected_files, runtime
         for skill in source_skills:
             for source in skill.parent.rglob('*'):
                 if not source.is_file():
@@ -22,6 +25,7 @@ def main():
                 installed = installed_root / source.relative_to(source_root)
                 assert installed.is_file(), installed
                 assert installed.read_bytes() == source.read_bytes(), installed
+                assert bool(installed.stat().st_mode & 0o111) == bool(source.stat().st_mode & 0o111), installed
             adaptation = installed_root / skill.parent.name / '../poteto-mode/references/runtime-adaptation.md'
             assert adaptation.resolve().is_relative_to(installed_root), adaptation
             assert adaptation.is_file(), adaptation

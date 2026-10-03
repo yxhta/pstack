@@ -5,8 +5,6 @@ paths: ["**/*.ts", "**/*.tsx"]
 disable-model-invocation: true
 ---
 
-On Claude Code or Codex, first read [the runtime adaptation](../poteto-mode/references/runtime-adaptation.md). Apply its substitutions to this skill.
-
 # TypeScript best practices
 
 Apply the **type-system-discipline** principle skill first.

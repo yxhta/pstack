@@ -4,8 +4,6 @@ description: "Apply when integrating a new requirement into an existing design. 
 disable-model-invocation: true
 ---
 
-On Claude Code or Codex, first read [the runtime adaptation](../poteto-mode/references/runtime-adaptation.md). Apply its substitutions to this skill.
-
 # Redesign From First Principles
 
 When integrating a change, don't bolt it onto the existing design. Redesign as if the requirement had been there from the start.

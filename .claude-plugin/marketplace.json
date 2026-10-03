@@ -7,7 +7,7 @@
   "plugins": [
     {
       "name": "pstack",
-      "source": "./pstack",
+      "source": "./portable/pstack",
       "description": "Upstream pstack workflows adapted for Claude Code and Codex."
     }
   ]

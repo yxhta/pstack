@@ -1,0 +1,3 @@
+pstack/** -whitespace
+README.md -whitespace
+portable/pstack/** -whitespace linguist-generated=true

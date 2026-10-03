@@ -4,8 +4,6 @@ description: "Apply when reviewing or shaping code that's hard to trace. Count l
 disable-model-invocation: true
 ---
 
-On Claude Code or Codex, first read [the runtime adaptation](../poteto-mode/references/runtime-adaptation.md). Apply its substitutions to this skill.
-
 # Minimize Reader Load
 
 Maintainability is the work a reader must do to understand code. Track two axes:

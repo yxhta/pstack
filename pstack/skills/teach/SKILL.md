@@ -4,8 +4,6 @@ description: "Explain a body of work plainly so a person actually understands it
 disable-model-invocation: true
 ---
 
-On Claude Code or Codex, first read [the runtime adaptation](../poteto-mode/references/runtime-adaptation.md). Apply its substitutions to this skill.
-
 # Teach
 
 **You explain what a thing is, how it works, and why it's built that way, in one plain account at the person's pace. The goal is that they understand it, not that you change anything.**
