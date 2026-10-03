@@ -4,6 +4,8 @@ description: "Apply when introducing a new internal API while old callers still 
 disable-model-invocation: true
 ---
 
+On Claude Code or Codex, first read [the runtime adaptation](../../compatibility.md). Apply its substitutions to this skill.
+
 # Migrate Callers Then Delete Legacy APIs
 
 When we decide a new API is the right design, migrate callers and remove the old API in the same refactor wave instead of preserving compatibility layers.

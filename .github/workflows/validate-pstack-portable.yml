@@ -1,0 +1,33 @@
+name: Validate portable pstack
+
+on:
+  push:
+    paths:
+      - 'pstack/**'
+      - 'tools/portable/**'
+      - '.claude-plugin/**'
+      - '.agents/plugins/**'
+      - '.github/workflows/*pstack*.yml'
+  pull_request:
+    paths:
+      - 'pstack/**'
+      - 'tools/portable/**'
+      - '.claude-plugin/**'
+      - '.agents/plugins/**'
+      - '.github/workflows/*pstack*.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install PyYAML==6.0.3
+      - run: python3 tools/portable/validate.py
+      - run: python3 -m unittest discover -s tools/portable -p 'test_*.py'
+      - run: bash -n tools/portable/sync-upstream.sh

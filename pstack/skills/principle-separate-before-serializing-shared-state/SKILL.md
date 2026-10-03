@@ -4,6 +4,8 @@ description: "Apply when concurrent actors might write to the same file, branch,
 disable-model-invocation: true
 ---
 
+On Claude Code or Codex, first read [the runtime adaptation](../../compatibility.md). Apply its substitutions to this skill.
+
 # Separate Before Serializing Shared State
 
 When concurrent actors might share mutable state, first ask whether they need the same mutable object. If not, eliminate the sharing. When sharing is real, enforce serialization structurally: lockfiles, sequential phases, exclusive ownership. Instructions and conventions are not concurrency control.

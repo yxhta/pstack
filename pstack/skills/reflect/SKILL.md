@@ -4,6 +4,8 @@ description: Spawn three parallel review subagents over the active transcript, s
 disable-model-invocation: true
 ---
 
+On Claude Code or Codex, first read [the runtime adaptation](../../compatibility.md). Apply its substitutions to this skill.
+
 # Reflect
 
 Mine the current conversation for durable learnings, then route them into skill edits.

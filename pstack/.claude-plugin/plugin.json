@@ -1,0 +1,16 @@
+{
+  "name": "pstack",
+  "version": "0.15.6-portable.1",
+  "description": "Upstream pstack workflows adapted for Claude Code and Codex.",
+  "author": {
+    "name": "yxhta"
+  },
+  "homepage": "https://github.com/yxhta/pstack",
+  "repository": "https://github.com/yxhta/pstack",
+  "license": "MIT",
+  "skills": "./skills/",
+  "agents": [
+    "./runtime-agents/poteto-agent.md",
+    "./runtime-agents/comment-sicko.md"
+  ]
+}

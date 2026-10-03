@@ -4,6 +4,8 @@ description: "Apply when product, UX, or feature-scope tradeoffs come up. Choose
 disable-model-invocation: true
 ---
 
+On Claude Code or Codex, first read [the runtime adaptation](../../compatibility.md). Apply its substitutions to this skill.
+
 # Experience First
 
 When implementation convenience conflicts with user delight, choose delight.

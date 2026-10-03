@@ -1,0 +1,38 @@
+name: Sync pstack upstream
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 2 * * *'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: pstack-upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'yxhta/pstack'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.UPSTREAM_SYNC_TOKEN || github.token }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install PyYAML==6.0.3
+      - name: Configure commit identity
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+      - name: Merge, validate, and open a sync PR
+        env:
+          GH_TOKEN: ${{ secrets.UPSTREAM_SYNC_TOKEN || github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: bash tools/portable/sync-upstream.sh
