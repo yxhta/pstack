@@ -4,8 +4,6 @@ description: "Apply when debugging. Trace each symptom to its root cause and fix
 disable-model-invocation: true
 ---
 
-On Claude Code or Codex, first read [the runtime adaptation](../poteto-mode/references/runtime-adaptation.md). Apply its substitutions to this skill.
-
 # Fix Root Causes
 
 When debugging, do not fix symptoms. Trace every problem to its root cause and fix it there.

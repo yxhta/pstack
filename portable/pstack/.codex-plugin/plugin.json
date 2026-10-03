@@ -1,0 +1,19 @@
+{
+  "name": "pstack",
+  "version": "0.15.6-portable.g23e4138daa01.a3051c49fe822",
+  "description": "Upstream pstack workflows adapted for Claude Code and Codex.",
+  "author": {
+    "name": "yxhta"
+  },
+  "homepage": "https://github.com/yxhta/pstack",
+  "repository": "https://github.com/yxhta/pstack",
+  "license": "MIT",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "pstack",
+    "shortDescription": "Upstream pstack for Claude Code and Codex",
+    "defaultPrompt": [
+      "Use poteto-mode for this task."
+    ]
+  }
+}

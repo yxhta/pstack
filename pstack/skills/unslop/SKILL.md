@@ -4,8 +4,6 @@ description: Cut AI tells from any writing. Must always apply.
 disable-model-invocation: true
 ---
 
-On Claude Code or Codex, first read [the runtime adaptation](../poteto-mode/references/runtime-adaptation.md). Apply its substitutions to this skill.
-
 # Unslop
 
 Edit text to remove AI patterns.

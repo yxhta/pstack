@@ -4,8 +4,6 @@ description: "Apply when context is filling up: large outputs, long files, repea
 disable-model-invocation: true
 ---
 
-On Claude Code or Codex, first read [the runtime adaptation](../poteto-mode/references/runtime-adaptation.md). Apply its substitutions to this skill.
-
 # Guard the Context Window
 
 The context window is finite and non-renewable within a session. Every token should be worth its cost.
