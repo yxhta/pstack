@@ -26,6 +26,15 @@ class PrepareTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             prepare('# Missing manifest\n', 'example')
 
+    def test_migrates_plugin_only_reference_without_changing_body(self):
+        body = '# Example\nVerify the actual result.\n'
+        legacy = ('On Claude Code or Codex, first read [the runtime adaptation]'
+                  '(../../compatibility.md). Apply its substitutions to this skill.\n\n')
+        original = '---\nname: example\ndescription: Example\n---\n\n' + legacy + body
+        adapted = prepare(original, 'example')
+        self.assertNotIn('../../compatibility.md', adapted)
+        self.assertEqual(adapted.split(NOTICE, 1)[1], body)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -4,7 +4,7 @@ description: "Apply before you trust, report, or act on a number you measured: a
 disable-model-invocation: true
 ---
 
-On Claude Code or Codex, first read [the runtime adaptation](../../compatibility.md). Apply its substitutions to this skill.
+On Claude Code or Codex, first read [the runtime adaptation](../poteto-mode/references/runtime-adaptation.md). Apply its substitutions to this skill.
 
 # Explain the Number
 

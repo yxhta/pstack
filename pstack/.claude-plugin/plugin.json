@@ -1,6 +1,6 @@
 {
   "name": "pstack",
-  "version": "0.15.6-portable.1",
+  "version": "0.15.6-portable.2",
   "description": "Upstream pstack workflows adapted for Claude Code and Codex.",
   "author": {
     "name": "yxhta"
