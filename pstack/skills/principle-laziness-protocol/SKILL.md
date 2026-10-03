@@ -4,6 +4,8 @@ description: "Apply when refactoring, evaluating diff size, or tempted to add ab
 disable-model-invocation: true
 ---
 
+On Claude Code or Codex, first read [the runtime adaptation](../../compatibility.md). Apply its substitutions to this skill.
+
 # Laziness Protocol
 
 Aim for the most result with the least code and complexity.

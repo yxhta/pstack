@@ -1,0 +1,14 @@
+{
+  "name": "yxhta-pstack",
+  "description": "Upstream pstack adapted for Claude Code and Codex.",
+  "owner": {
+    "name": "yxhta"
+  },
+  "plugins": [
+    {
+      "name": "pstack",
+      "source": "./pstack",
+      "description": "Upstream pstack workflows adapted for Claude Code and Codex."
+    }
+  ]
+}

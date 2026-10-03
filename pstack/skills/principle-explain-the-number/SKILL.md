@@ -4,6 +4,8 @@ description: "Apply before you trust, report, or act on a number you measured: a
 disable-model-invocation: true
 ---
 
+On Claude Code or Codex, first read [the runtime adaptation](../../compatibility.md). Apply its substitutions to this skill.
+
 # Explain the Number
 
 A measured number is a claim about a system. Before you trust it, report it, or act on it, find what limits it and rule out that it measured something else.
