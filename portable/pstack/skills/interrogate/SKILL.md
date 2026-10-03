@@ -1,7 +1,8 @@
 ---
 name: interrogate
-description: "Use for \"interrogate\", \"adversarial review\", \"multi-model review\", \"challenge this\", \"stress test this code\", \"find blind spots\", or \"tear this apart\". Multiple LLM reviewers challenge changes from independent angles."
-disable-model-invocation: true
+description: Use for "interrogate", "adversarial review", "multi-model review", "challenge
+  this", "stress test this code", "find blind spots", or "tear this apart". Multiple
+  LLM reviewers challenge changes from independent angles.
 ---
 
 On Claude Code or Codex, first read [the runtime adaptation](../poteto-mode/references/runtime-adaptation.md). Apply its substitutions to this skill.

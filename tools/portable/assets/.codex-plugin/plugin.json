@@ -15,5 +15,6 @@
     "defaultPrompt": [
       "Use poteto-mode for this task."
     ]
-  }
+  },
+  "hooks": "./hooks/codex-hooks.json"
 }

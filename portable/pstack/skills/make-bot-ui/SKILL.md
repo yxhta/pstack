@@ -1,10 +1,8 @@
 ---
 name: make-bot-ui
-description: >-
-  Use when building a custom UI (page, dashboard, buttons) that should wake a
-  Grok Bot over a webhook, when the user must provide a webhook sender key, or
-  when exposing that UI on Tailscale.
-disable-model-invocation: true
+description: Use when building a custom UI (page, dashboard, buttons) that should
+  wake a Grok Bot over a webhook, when the user must provide a webhook sender key,
+  or when exposing that UI on Tailscale.
 ---
 
 On Claude Code or Codex, first read [the runtime adaptation](../poteto-mode/references/runtime-adaptation.md). Apply its substitutions to this skill.

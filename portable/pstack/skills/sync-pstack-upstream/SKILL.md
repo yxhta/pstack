@@ -1,6 +1,8 @@
 ---
 name: sync-pstack-upstream
-description: Review or integrate cursor/plugins updates into the yxhta/pstack source fork and prepare a sync PR. Use for fork maintenance, not consumer installation updates.
+description: Review or integrate cursor/plugins updates into the yxhta/pstack source
+  fork and prepare a sync PR. Use for fork maintenance, not consumer installation
+  updates.
 ---
 
 On Claude Code or Codex, first read [the runtime adaptation](../poteto-mode/references/runtime-adaptation.md). Apply its substitutions to this skill.
@@ -15,7 +17,7 @@ For a check-only request, complete only the review below and return findings. Do
 
 1. Read `tools/portable/upstream.json`, `README_PORTABLE.md`, the generator, and the sync script in the checkout. Use the recorded repository, branch, and last merged SHA rather than remembered revisions.
 2. Fetch the recorded upstream branch. If its head is already an ancestor of the fork's main, report that there is no pending update.
-3. Read the commit range and the full pstack diff from the recorded SHA to the fetched head. Separate changes to engineering procedures from Cursor-specific tools, model settings, dispatch fields, dependencies, and transcript formats. Report unrelated upstream repository changes separately.
+3. Read the commit range and the full pstack diff and the `cursor-team-kit/skills/deslop/SKILL.md` and `cursor-team-kit/LICENSE` dependency diffs from the recorded SHA to the fetched head. Separate changes to engineering procedures from Cursor-specific tools, model settings, dispatch fields, dependencies, and transcript formats. Report unrelated upstream repository changes separately.
 4. Trace every changed runtime assumption to the relevant adaptation or generator behavior. Keep upstream's engineering choices unless the user explicitly asks to change policy. Do not describe a model name or tool as supported without checking the current harness.
 
 ## Integrate in a worktree

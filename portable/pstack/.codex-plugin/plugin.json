@@ -1,6 +1,6 @@
 {
   "name": "pstack",
-  "version": "0.15.6-portable.g23e4138daa01.a3051c49fe822",
+  "version": "0.15.6-portable.g23e4138daa01.a361e9b5ed397",
   "description": "Upstream pstack workflows adapted for Claude Code and Codex.",
   "author": {
     "name": "yxhta"
@@ -15,5 +15,6 @@
     "defaultPrompt": [
       "Use poteto-mode for this task."
     ]
-  }
+  },
+  "hooks": "./hooks/codex-hooks.json"
 }

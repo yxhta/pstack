@@ -1,7 +1,8 @@
 ---
 name: tdd
-description: "Use only when the user explicitly asks for TDD, a failing test, or a regression test, OR when the bug has an obvious cheap local test target. Skip when the test path is unclear, expensive, integration-heavy, or not requested."
-disable-model-invocation: true
+description: Use only when the user explicitly asks for TDD, a failing test, or a
+  regression test, OR when the bug has an obvious cheap local test target. Skip when
+  the test path is unclear, expensive, integration-heavy, or not requested.
 ---
 
 On Claude Code or Codex, first read [the runtime adaptation](../poteto-mode/references/runtime-adaptation.md). Apply its substitutions to this skill.

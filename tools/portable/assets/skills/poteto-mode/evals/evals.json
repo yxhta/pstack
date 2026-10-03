@@ -1,0 +1,41 @@
+{
+  "skill_name": "poteto-mode",
+  "evals": [
+    {
+      "id": 1,
+      "name": "claude-native-effort",
+      "prompt": "Claude native poteto-agent wrappers are registered. Agent has model override but no effort parameter. A confirmed model supports high. Sheet says bug-fix: confirmed-model @high. Delegate the scoped fix.",
+      "expected_output": "Use pstack:poteto-agent-high with the supported model override and required reading. Preserve scope. Do not modify session settings or claim unobserved actual effort."
+    },
+    {
+      "id": 2,
+      "name": "skills-only-effort",
+      "prompt": "Only skills are installed. Agent accepts a model but no effort parameter. Sheet says feature, refactoring: confirmed-model @high. Delegate implementation.",
+      "expected_output": "Use a general-purpose agent with adaptation and upstream poteto-mode reading. Do not call unregistered native variants. Disclose unavailable effort control."
+    },
+    {
+      "id": 3,
+      "name": "codex-fork",
+      "prompt": "Codex spawn_agent permits overrides only with no or partial-history forks. Sheet selects an available model and supported effort. Delegate implementation.",
+      "expected_output": "Use an allowed no or partial-history fork and a consolidated brief. Never attach overrides to a full-history fork."
+    },
+    {
+      "id": 4,
+      "name": "unavailable-model",
+      "prompt": "The model sheet selects an unavailable model. The user has not authorized installing tools or changing config. Delegate the scoped task.",
+      "expected_output": "Do not send the unknown model ID. Inherit a supported session model and disclose the unapplied choice. Preserve the original task permissions."
+    },
+    {
+      "id": 5,
+      "name": "panel-diversity",
+      "prompt": "The architect panel has three configured entries. Overrides are forbidden and only the inherited model is available.",
+      "expected_output": "Preserve three independent fresh candidates and report reduced model diversity. Do not call this a multi-model comparison. If delegation is disabled, run the independent passes sequentially and disclose it."
+    },
+    {
+      "id": 6,
+      "name": "setup-budget",
+      "prompt": "Configure pstack models for a skills-only Codex installation. Available models cannot be enumerated.",
+      "expected_output": "Preserve upstream budget labels, role confirmation and all 17 role labels including hardest tasks. Offer inherited choices without inventing model IDs. Write only the authorized runtime Markdown model sheet."
+    }
+  ]
+}

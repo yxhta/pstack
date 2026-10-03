@@ -1,7 +1,9 @@
 ---
 name: principle-experience-first
-description: "Apply when product, UX, or feature-scope tradeoffs come up. Choose user delight over implementation convenience; ship fewer polished features over more rough ones."
-disable-model-invocation: true
+description: Apply when product, UX, or feature-scope tradeoffs come up. Choose user
+  delight over implementation convenience; ship fewer polished features over more
+  rough ones.
+user-invocable: false
 ---
 
 On Claude Code or Codex, first read [the runtime adaptation](../poteto-mode/references/runtime-adaptation.md). Apply its substitutions to this skill.

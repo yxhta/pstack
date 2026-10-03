@@ -1,7 +1,9 @@
 ---
 name: maintain-verification-skill
-description: "Periodic pass that keeps a project's verification skill and feature map honest: parallel source readers per feature, one live session driving every feature, at most one PR of proven corrections. Use for /maintain-verification-skill or \"audit the verify skill\"."
-disable-model-invocation: true
+description: 'Periodic pass that keeps a project''s verification skill and feature
+  map honest: parallel source readers per feature, one live session driving every
+  feature, at most one PR of proven corrections. Use for /maintain-verification-skill
+  or "audit the verify skill".'
 ---
 
 On Claude Code or Codex, first read [the runtime adaptation](../poteto-mode/references/runtime-adaptation.md). Apply its substitutions to this skill.

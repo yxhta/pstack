@@ -1,6 +1,6 @@
 {
   "name": "pstack",
-  "version": "0.15.6-portable.g23e4138daa01.a3051c49fe822",
+  "version": "0.15.6-portable.g23e4138daa01.a361e9b5ed397",
   "description": "Upstream pstack workflows adapted for Claude Code and Codex.",
   "author": {
     "name": "yxhta"
@@ -11,6 +11,16 @@
   "skills": "./skills/",
   "agents": [
     "./runtime-agents/poteto-agent.md",
-    "./runtime-agents/comment-sicko.md"
+    "./runtime-agents/poteto-agent-low.md",
+    "./runtime-agents/poteto-agent-medium.md",
+    "./runtime-agents/poteto-agent-high.md",
+    "./runtime-agents/poteto-agent-xhigh.md",
+    "./runtime-agents/poteto-agent-max.md",
+    "./runtime-agents/comment-sicko.md",
+    "./runtime-agents/comment-sicko-low.md",
+    "./runtime-agents/comment-sicko-medium.md",
+    "./runtime-agents/comment-sicko-high.md",
+    "./runtime-agents/comment-sicko-xhigh.md",
+    "./runtime-agents/comment-sicko-max.md"
   ]
 }

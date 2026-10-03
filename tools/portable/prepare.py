@@ -12,6 +12,8 @@ import tempfile
 
 import yaml
 
+from runtime import EFFORTS, WRAPPERS
+
 ROOT = Path(__file__).resolve().parents[2]
 NOTICE = ('On Claude Code or Codex, first read [the runtime adaptation]'
           '(../poteto-mode/references/runtime-adaptation.md). Apply its substitutions to this skill.\n\n')
@@ -45,20 +47,44 @@ def read_tree(root: Path) -> ArtifactTree:
     return tree
 
 
-def prepare(text, name):
-    match = re.match(r'\A---\n(.*?)\n---\n(.*)\Z', text, re.S)
+class UniqueLoader(yaml.SafeLoader):
+    pass
+
+
+def unique_mapping(loader, node):
+    result = {}
+    for key_node, value_node in node.value:
+        key = loader.construct_object(key_node)
+        if key in result:
+            raise ValueError(f'Duplicate YAML key: {key}')
+        result[key] = loader.construct_object(value_node)
+    return result
+
+
+UniqueLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, unique_mapping)
+
+
+def frontmatter(text):
+    match = re.fullmatch(r'---\n(.*?)\n---\n(.*)', text, re.S)
     if not match:
         raise ValueError('Expected LF-delimited YAML frontmatter')
     front, body = match.groups()
-    metadata = yaml.safe_load(front)
+    metadata = yaml.load(front, Loader=UniqueLoader)
     if not isinstance(metadata, dict) or not isinstance(metadata.get('name'), str) or not isinstance(metadata.get('description'), str):
         raise ValueError('Expected string name and description in frontmatter')
-    if len(re.findall(r'^name: .+$', front, re.M)) != 1:
-        raise ValueError('Expected one single-line name field')
-    front = re.sub(r'^name: .+$', f'name: {name}', front, flags=re.M)
-    body = body.lstrip('\n')
+    return metadata, body.lstrip('\n')
+
+
+def prepare(text, name):
+    metadata, body = frontmatter(text)
+    for key in ('disable-model-invocation', 'mode', 'icon', 'color', 'reminder'):
+        metadata.pop(key, None)
+    metadata['name'] = name
+    if name.startswith('principle-'):
+        metadata['user-invocable'] = False
     if body.startswith(NOTICE):
         body = body[len(NOTICE):]
+    front = yaml.safe_dump(metadata, sort_keys=False, allow_unicode=True).rstrip()
     return f'---\n{front}\n---\n\n{NOTICE}{body}'
 
 
@@ -82,6 +108,50 @@ def render_package(layout: PackageLayout, upstream_commit: str) -> ArtifactTree:
             if target in overlay:
                 raise ValueError(f'Portable asset collides with generated agent: {target}')
             overlay[target] = artifact
+    dependency = layout.upstream.parent / 'cursor-team-kit'
+    for name in ('skills/deslop/SKILL.md', 'LICENSE'):
+        path = dependency / name
+        if any(p.is_symlink() for p in (path, *path.parents) if p.is_relative_to(dependency)):
+            raise ValueError(f'Unsupported symlink in dependency: {path}')
+    deslop = (dependency / 'skills/deslop/SKILL.md').read_text()
+    imported = Artifact(prepare(deslop, 'deslop').encode(), 0o644)
+    for target in ('skills/deslop/SKILL.md', 'skills/poteto-mode/references/deslop.md'):
+        if target in tree or target in overlay:
+            raise ValueError(f'Portable asset collides with dependency: {target}')
+        data = imported.data
+        if target.endswith('/references/deslop.md'):
+            data = data.replace(NOTICE.encode(), NOTICE.replace('../poteto-mode/references/runtime-adaptation.md', 'runtime-adaptation.md').encode(), 1)
+        overlay[target] = Artifact(data, imported.mode)
+    overlay['LICENSE-CURSOR-TEAM-KIT'] = Artifact((dependency / 'LICENSE').read_bytes(), 0o644)
+    overlay['DESLOP_SOURCE.md'] = Artifact((
+        '# Deslop source\n\nImported without body changes from '
+        f'https://github.com/cursor/plugins/blob/{upstream_commit}/cursor-team-kit/skills/deslop/SKILL.md.\n'
+        'Its MIT license is LICENSE-CURSOR-TEAM-KIT.\n').encode(), 0o644)
+    for name in ('LICENSE-CURSOR-TEAM-KIT', 'DESLOP_SOURCE.md'):
+        for directory in ('skills/deslop', 'skills/poteto-mode/references'):
+            target = directory + '/' + name
+            if target in tree or target in overlay:
+                raise ValueError(f'Portable asset collides with dependency notice: {target}')
+            overlay[target] = overlay[name]
+    agent_paths = []
+    for agent in WRAPPERS:
+        name = f'runtime-agents/{agent}.md'
+        if name not in overlay:
+            continue
+        metadata, body = frontmatter(overlay[name].data.decode())
+        metadata['model'] = 'inherit'
+        overlay[name] = Artifact(('---\n' + yaml.safe_dump(metadata, sort_keys=False) + '---\n\n' + body).encode(), 0o644)
+        agent_paths.append('./' + name)
+        for effort in EFFORTS:
+            variant = metadata | {'name': f'{agent}-{effort}', 'effort': effort}
+            target = f'runtime-agents/{agent}-{effort}.md'
+            if target in tree or target in overlay:
+                raise ValueError(f'Portable asset collides with variant: {target}')
+            overlay[target] = Artifact(('---\n' + yaml.safe_dump(variant, sort_keys=False) + '---\n\n' + body).encode(), 0o644)
+            agent_paths.append('./' + target)
+    manifest = json.loads(overlay['.claude-plugin/plugin.json'].data)
+    manifest['agents'] = agent_paths
+    overlay['.claude-plugin/plugin.json'] = Artifact((json.dumps(manifest, indent=2) + '\n').encode(), 0o644)
     version = json.loads(tree['.cursor-plugin/plugin.json'].data)['version']
     digest = hashlib.sha256()
     for name, artifact in sorted((tree | overlay).items()):
@@ -107,7 +177,7 @@ def render_package(layout: PackageLayout, upstream_commit: str) -> ArtifactTree:
 
 
 def verify_source(root: Path, upstream_commit: str) -> None:
-    entries = subprocess.check_output(['git', 'ls-tree', '-rz', upstream_commit, '--', 'pstack', 'README.md'], cwd=root).split(b'\0')
+    entries = subprocess.check_output(['git', 'ls-tree', '-rz', upstream_commit, '--', 'pstack', 'README.md', 'cursor-team-kit/skills/deslop/SKILL.md', 'cursor-team-kit/LICENSE'], cwd=root).split(b'\0')
     if (root / 'pstack').is_symlink():
         raise ValueError('Upstream source root must not be a symlink')
     expected = {}
@@ -122,7 +192,7 @@ def verify_source(root: Path, upstream_commit: str) -> None:
     if 'README.md' not in expected or not any(p.startswith('pstack/') for p in expected):
         raise ValueError('Pin must contain root README.md and pstack files')
     actual = {}
-    paths = list((root / 'pstack').rglob('*')) + [root / 'README.md']
+    paths = list((root / 'pstack').rglob('*')) + [root / 'README.md', root / 'cursor-team-kit/skills/deslop/SKILL.md', root / 'cursor-team-kit/LICENSE']
     for path in paths:
         if path.is_symlink():
             actual[path.relative_to(root).as_posix()] = ('120000', path.readlink().as_posix().encode())

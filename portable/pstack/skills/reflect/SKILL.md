@@ -1,7 +1,8 @@
 ---
 name: reflect
-description: Spawn three parallel review subagents over the active transcript, surface learnings, and route each to a concrete edit on an existing skill. Use when the user says reflect.
-disable-model-invocation: true
+description: Spawn three parallel review subagents over the active transcript, surface
+  learnings, and route each to a concrete edit on an existing skill. Use when the
+  user says reflect.
 ---
 
 On Claude Code or Codex, first read [the runtime adaptation](../poteto-mode/references/runtime-adaptation.md). Apply its substitutions to this skill.

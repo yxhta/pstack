@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - 'pstack/**'
+      - 'cursor-team-kit/skills/deslop/**'
+      - 'cursor-team-kit/LICENSE'
       - 'portable/**'
       - 'README.md'
       - 'README_PORTABLE.md'
@@ -15,6 +17,8 @@ on:
   pull_request:
     paths:
       - 'pstack/**'
+      - 'cursor-team-kit/skills/deslop/**'
+      - 'cursor-team-kit/LICENSE'
       - 'portable/**'
       - 'README.md'
       - 'README_PORTABLE.md'
@@ -41,6 +45,7 @@ jobs:
       - run: python3 tools/portable/validate.py
       - run: python3 -m unittest discover -s tools/portable -p 'test_*.py'
       - run: bash -n tools/portable/sync-upstream.sh
+      - run: sh -n portable/pstack/hooks/session-start.sh
       - name: Install the skills for both agents in an isolated project
         run: |
           mkdir -p "$RUNNER_TEMP/pstack-skills-smoke"

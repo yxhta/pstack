@@ -25,6 +25,10 @@ class PrepareTests(unittest.TestCase):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(data)
         (self.source / 'README').write_text('upstream')
+        dependency = self.root / 'cursor-team-kit/skills/deslop/SKILL.md'
+        dependency.parent.mkdir(parents=True)
+        dependency.write_text('---\nname: deslop\ndescription: Clean\n---\n\nClean diff.\n')
+        (self.root / 'cursor-team-kit/LICENSE').write_text('MIT')
 
     def generate(self, check=False):
         prepare_package(self.layout, 'a' * 40, check=check)
@@ -40,7 +44,7 @@ class PrepareTests(unittest.TestCase):
         text = (self.layout.published / 'skills/example/SKILL.md').read_text()
         self.assertEqual(text.split(NOTICE)[1], '# Example\n')
         self.assertIn('name: example\n', text)
-        self.assertIn('mode: true\n', text)
+        self.assertNotIn('mode:', text)
 
     def test_added_deleted_renamed_resources_and_modes(self):
         self.generate()

@@ -1,7 +1,9 @@
 ---
 name: principle-foundational-thinking
-description: "Apply before writing logic: choosing core types and data structures, sequencing scaffold-vs-feature work, asking what concurrent actors share. Get the data structures right so downstream code becomes obvious."
-disable-model-invocation: true
+description: 'Apply before writing logic: choosing core types and data structures,
+  sequencing scaffold-vs-feature work, asking what concurrent actors share. Get the
+  data structures right so downstream code becomes obvious.'
+user-invocable: false
 ---
 
 On Claude Code or Codex, first read [the runtime adaptation](../poteto-mode/references/runtime-adaptation.md). Apply its substitutions to this skill.

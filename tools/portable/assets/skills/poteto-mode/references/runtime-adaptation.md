@@ -17,6 +17,8 @@ Treat the directory containing the installed skill folders as the skills root. R
 
 ## Claude Code
 
+Read [the Claude dispatch contract](claude-dispatch.md) before delegation.
+
 | Cursor instruction | Claude Code action |
 | --- | --- |
 | `Task`, `generalPurpose` | Available `Agent` or `Task` tool, `general-purpose` agent |
@@ -32,6 +34,8 @@ A skills-only installation does not register plugin agent types or `pstack:` ski
 Use background execution only if the tool supports it, and collect the result before reporting completion. Preserve plugin namespacing when invoking skills.
 
 ## Codex
+
+Read [the Codex dispatch contract](codex-dispatch.md) before delegation.
 
 | Cursor instruction | Codex action |
 | --- | --- |
@@ -54,8 +58,12 @@ Generated project skills go under `.claude/skills/` on Claude Code or `.agents/s
 
 Cursor's `create-skill` means the available native skill-authoring guidance (`skill-creator` on Codex), or direct authoring with valid `name` and `description` frontmatter when no equivalent is installed. Do not assume `plugin-dev` is installed.
 
-`deslop`, `control-cli`, and `control-ui` from `cursor-team-kit` are not bundled by this fork. Use an installed equivalent if available. Otherwise inspect the diff directly for deslopping, run CLI commands and observe their output, or drive a UI with the available browser/computer tools. Report any verification you could not perform.
+The upstream [deslop instructions](deslop.md) are bundled from the same source pin. Use the installed deslop skill or read this reference before commit. `control-cli` and `control-ui` are not bundled. Run CLI commands and observe their output, or drive a UI with the available browser/computer tools. Report any verification you could not perform.
 
 Use only the active session's supplied transcript or a user-provided digest for `reflect`, `automate-me`, and `recall`. Do not search unrelated runtime histories or treat Cursor's transcript format as Claude Code/Codex format. Cursor chat URLs, `/goal`, `/loop`, and wake-up mechanisms have equivalents only when the session exposes them; never claim background persistence that does not exist.
 
 `make-bot-ui`, the Benny automation pack, and Cursor-specific tutorial steps require Cursor and are not supported here. Shared scripts can be used only when their dependencies and data formats are available; this mapping does not port their transcript parsers.
+
+## Native startup context
+
+Native plugins provide a read-only SessionStart hook. Skills-only installations do not install hooks. The hook is enabled by default unless the runtime model sheet contains `session hook: off`. A conflicting or unreadable directive suppresses context. The hook does not execute sheet contents, write settings or delegate work. Codex requires hook review and trust through `/hooks`; installation alone does not grant trust. Changed hook definitions require renewed trust. Child agents still need their explicit reading brief.

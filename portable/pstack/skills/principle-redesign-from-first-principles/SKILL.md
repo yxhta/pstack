@@ -1,7 +1,9 @@
 ---
 name: principle-redesign-from-first-principles
-description: "Apply when integrating a new requirement into an existing design. Redesign as if the requirement had been a foundational assumption from day one, instead of bolting it on."
-disable-model-invocation: true
+description: Apply when integrating a new requirement into an existing design. Redesign
+  as if the requirement had been a foundational assumption from day one, instead of
+  bolting it on.
+user-invocable: false
 ---
 
 On Claude Code or Codex, first read [the runtime adaptation](../poteto-mode/references/runtime-adaptation.md). Apply its substitutions to this skill.

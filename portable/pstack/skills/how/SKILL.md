@@ -1,7 +1,9 @@
 ---
 name: how
-description: "Use for \"how does X work\", code walkthroughs before changing something, and placement / ownership / layering questions (\"where should this live\", \"which package owns this\", \"is this the right layer\"). Explains subsystem architecture, runtime flow, onboarding mental models. Use why for motivation."
-disable-model-invocation: true
+description: Use for "how does X work", code walkthroughs before changing something,
+  and placement / ownership / layering questions ("where should this live", "which
+  package owns this", "is this the right layer"). Explains subsystem architecture,
+  runtime flow, onboarding mental models. Use why for motivation.
 ---
 
 On Claude Code or Codex, first read [the runtime adaptation](../poteto-mode/references/runtime-adaptation.md). Apply its substitutions to this skill.

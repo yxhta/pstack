@@ -1,0 +1,3 @@
+pstack is available in this session. Read poteto-mode and its runtime adaptation when the user's task matches a pstack playbook or needs engineering rigor. Keep casual or small requests lightweight. Explicit user instructions and the host's permissions take precedence.
+
+Before dispatch, read the runtime model sheet and the matching Claude Code or Codex dispatch contract in poteto-mode/references. Follow the upstream budget confirmation, fresh-agent, scope, verification and merge conditions. Pass the runtime adaptation and required upstream reading in each child brief. This hook supplies context only and does not authorize actions or configure models.

@@ -34,11 +34,11 @@ codex plugin marketplace add yxhta/pstack
 codex plugin add pstack@yxhta-pstack
 ```
 
-Start with `/pstack:poteto-mode` on Claude Code. On Codex, select the installed `pstack:poteto-mode` skill or ask to use poteto-mode. Run setup-pstack to configure roles. Missing roles inherit the session model; multi-model diversity needs models that your runtime actually exposes. No startup hook or automatic routing is installed.
+Start with `/pstack:poteto-mode` on Claude Code. On Codex, select the installed `pstack:poteto-mode` skill or ask to use poteto-mode. Run setup-pstack to configure roles. Missing roles inherit the session model; multi-model diversity needs models that your runtime actually exposes. Native plugins supply startup context when their hook is enabled and trusted.
 
 For a skills-only installation, clone this repository and keep it in place, then link each directory under `portable/pstack/skills/` into your runtime's user skill directory. Install all skill directories together so the shared runtime adaptation and other relative references stay reachable. Existing skill names such as `swarm` and `architect` may collide: inspect existing installations before replacing them.
 
-Read [runtime adaptation](tools/portable/assets/skills/poteto-mode/references/runtime-adaptation.md) for the tool mappings, paths, and limitations. Cursor-only `make-bot-ui`, Benny automations, cloud workers, and transcript parsers are not ported. Optional cursor-team-kit dependencies are not included. Installation and structural validation do not establish that every workflow runs correctly; check a real task in each runtime.
+Read [runtime adaptation](tools/portable/assets/skills/poteto-mode/references/runtime-adaptation.md) for the tool mappings, paths, and limitations. Cursor-only `make-bot-ui`, Benny automations, cloud workers, and transcript parsers are not ported. Deslop is bundled at the same upstream pin. Other optional cursor-team-kit dependencies are not included. Installation and structural validation do not establish that every workflow runs correctly; check a real task in each runtime.
 
 ## Upstream updates
 
@@ -67,3 +67,15 @@ Git whitespace checks apply to fork-owned inputs. `.gitattributes` exempts the u
 Use `$sync-pstack-upstream` on Codex or `/sync-pstack-upstream` on Claude Code to review and integrate upstream changes from a source checkout. A native Claude plugin exposes `/pstack:sync-pstack-upstream`. The skill reads the recorded pin and full upstream diff, reviews changed runtime assumptions, regenerates, verifies, and prepares a PR. It does not merge automatically. Consumer installation updates still use `npx skills update`.
 
 Mechanical merge conflicts in raw `pstack/` are avoided by keeping it pristine. Conflicts in root marketplaces or fork-owned automation can still occur. Semantic changes to upstream workflows still require review and actual execution on the affected runtime. Automated sync PRs report this review gap rather than claiming complete runtime compatibility.
+
+## Native runtime support
+
+Native plugin installation includes a read-only SessionStart hook. Claude Code discovers `hooks/hooks.json`; Codex uses the explicitly registered `hooks/codex-hooks.json`. Claude also receives fresh native poteto-agent and read-only comment-sicko wrappers with low, medium, high, xhigh and max effort variants. Each variant inherits the model. Support for the requested effort still depends on the chosen model.
+
+The runtime adaptation has separate Claude and Codex dispatch contracts. They consume confirmed session models, preserve the upstream role labels and panel counts, and disclose unsupported model or effort choices. Native wrapper Markdown links use the host-substituted `${CLAUDE_PLUGIN_ROOT}` so required reading resolves from the installed plugin root. Skills-only installations use general-purpose agents with the required reading in their brief. They do not register hooks or native agents.
+
+The startup hook reads only the `session hook` directive in the runtime model sheet. Add `session hook: off` to `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/pstack-models.md` or `${CODEX_HOME:-$HOME/.codex}/pstack-models.md` to disable it. Missing sheets leave startup context enabled. Unreadable sheets or conflicting directives suppress context and print a warning. No setting is written automatically.
+
+Codex hooks require review and trust through `/hooks`. Installing or enabling the plugin does not grant that trust. Changed hook definitions require another review. SessionStart supplies parent context only; delegated agents still receive explicit reading instructions.
+
+Deslop is generated directly from `cursor-team-kit/skills/deslop/SKILL.md` at the recorded upstream pin. Both the standalone skill and the poteto-mode reference use the same source. `DESLOP_SOURCE.md` and `LICENSE-CURSOR-TEAM-KIT` carry its provenance and MIT license in the native package and inside both skill folders, so skills-only copies retain them. The original 49 pstack skill bodies and playbooks remain unchanged.

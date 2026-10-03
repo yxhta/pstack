@@ -1,0 +1,11 @@
+# Claude Code dispatch
+
+Read the model sheet at `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/pstack-models.md` immediately before dispatch. Resolve role names with the upstream setup-pstack procedure. Missing roles use `inherit-parent`. Parse `model @level` as separate model and effort choices. `inherit-parent` and `auto` omit the model override. `default effort: session` inherits the session effort; another default effort applies only when supported. An entry's explicit effort takes precedence over the default.
+
+Inspect the actual Agent or Task schema and the models available in this session. Pass model and effort arguments only when the schema accepts them and the selected model supports the effort. Do not infer availability from documentation examples. Do not rewrite the parent's model or effort settings.
+
+For a poteto-agent or Comment Sicko task, prefer the native `pstack:poteto-agent` or `pstack:comment-sicko` wrapper when registered. If the tool has no effort argument, the corresponding native wrapper suffixed `-low`, `-medium`, `-high`, `-xhigh` or `-max` supplies effort through its frontmatter. These wrappers inherit the model. Use a model override only when the actual tool supports it. If the wrapper cannot run the configured model, use a supported general-purpose agent with the required reading in its brief. Preserve Comment Sicko's read-only scope. A model may fall back to a lower supported effort. Report the level applied if observable and otherwise the requested level and the uncertainty.
+
+A skills-only installation registers neither native wrappers nor their effort variants. Use a general-purpose agent with explicit adaptation and upstream reading. If model or effort control is unavailable, inherit the session and disclose the unapplied choice. Registration alone proves neither execution nor model support.
+
+For panel roles, keep one fresh agent per configured entry, including inherited aliases. A missing role does not reduce the participant count required by the upstream playbook; use the inherited selection for each required participant. Prefer distinct confirmed model families when permitted. If model overrides are unavailable, retain independent inherited-model agents and report reduced diversity. Keep the cross-judge selection and all original completion and merge gates.

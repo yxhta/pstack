@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Validate the portable package and its runtime entry points."""
 import json
 import re
 import subprocess
@@ -8,11 +7,14 @@ from pathlib import Path
 
 import yaml
 
+from runtime import validate_resources
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
 def main():
     subprocess.run([sys.executable, str(ROOT / 'tools/portable/prepare.py'), '--check'], check=True)
+    validate_resources(ROOT / 'portable/pstack', ROOT / 'pstack')
     manifests = {}
     for name in ('portable/pstack/.claude-plugin/plugin.json', 'portable/pstack/.codex-plugin/plugin.json',
                  '.claude-plugin/marketplace.json', '.agents/plugins/marketplace.json',
@@ -35,7 +37,8 @@ def main():
         assert metadata['name'] == path.parent.name, path
         assert isinstance(metadata['description'], str) and metadata['description'].strip(), path
         assert (path.parent / '../poteto-mode/references/runtime-adaptation.md').resolve().is_file(), path
-    json.loads((ROOT / 'portable/pstack/skills/sync-pstack-upstream/evals/evals.json').read_text())
+    for path in (ROOT / 'portable/pstack/skills').glob('*/evals/*.json'):
+        json.loads(path.read_text())
     for path in (ROOT / 'portable/pstack/runtime-agents').glob('*.md'):
         metadata = yaml.safe_load(path.read_text().split('---\n', 2)[1])
         assert metadata['name'] == path.stem, path
