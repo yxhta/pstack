@@ -7,7 +7,7 @@ This is a fork of [cursor/plugins](https://github.com/cursor/plugins), maintaine
 ### Skills CLI (Claude Code and Codex)
 
 ```sh
-npx skills add yxhta/pstack --skill '*' --agent claude-code codex
+npx skills add yxhta/pstack/portable/pstack --skill '*' --agent claude-code codex
 ```
 
 This installs the shared skill bundle for both agents in the current project. Add `--global` for a personal installation. Install all pstack skills together: the entry points share the runtime adaptation and other resources under poteto-mode. The bundle includes the adaptation and agent reference prompts, but it does not register plugin agent types or plugin namespaces. Use `/poteto-mode` on Claude Code and `$poteto-mode` on Codex; the adaptation describes the general-purpose agent fallback.
@@ -17,6 +17,16 @@ npx skills update
 ```
 
 Upstream synchronization updates this fork through PRs. After merging a sync PR, update the installed skills separately with the command above.
+
+If this fork was installed before the portable package split, reinstall it once from the explicit portable path. Old lock entries point to `pstack/skills/`, which now contains untouched Cursor source. Updating those entries can install Cursor instructions or fail to match normalized names such as `poteto-mode` and `make-bot-ui`.
+
+For an existing global installation:
+
+```sh
+npx skills add yxhta/pstack/portable/pstack --skill '*' --agent claude-code codex --global --yes
+```
+
+Include any other agents that already use this bundle. For a project installation, omit `--global`. Reinstallation refreshes the skill contents and records `portable/pstack/skills/<name>/SKILL.md` as the update path. Subsequent `npx skills update` calls use that path.
 
 ### Native plugins
 
