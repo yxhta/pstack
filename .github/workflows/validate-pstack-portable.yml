@@ -31,3 +31,9 @@ jobs:
       - run: python3 tools/portable/validate.py
       - run: python3 -m unittest discover -s tools/portable -p 'test_*.py'
       - run: bash -n tools/portable/sync-upstream.sh
+      - name: Install the skills for both agents in an isolated project
+        run: |
+          mkdir -p "$RUNNER_TEMP/pstack-skills-smoke"
+          cd "$RUNNER_TEMP/pstack-skills-smoke"
+          npx --yes skills add "$GITHUB_WORKSPACE" --skill '*' --agent claude-code codex --copy --yes
+          python3 "$GITHUB_WORKSPACE/tools/portable/check-install.py" "$RUNNER_TEMP/pstack-skills-smoke"

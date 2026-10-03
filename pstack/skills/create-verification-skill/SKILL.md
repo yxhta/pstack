@@ -4,7 +4,7 @@ description: "Generate a project-local verification skill that drives your app t
 disable-model-invocation: true
 ---
 
-On Claude Code or Codex, first read [the runtime adaptation](../../compatibility.md). Apply its substitutions to this skill.
+On Claude Code or Codex, first read [the runtime adaptation](../poteto-mode/references/runtime-adaptation.md). Apply its substitutions to this skill.
 
 # Create a verification skill
 

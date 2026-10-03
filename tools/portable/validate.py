@@ -34,7 +34,7 @@ def main():
         metadata = yaml.safe_load(path.read_text().split('---\n', 2)[1])
         assert metadata['name'] == path.parent.name, path
         assert isinstance(metadata['description'], str) and metadata['description'].strip(), path
-        assert (path.parent / '../../compatibility.md').resolve().is_file(), path
+        assert (path.parent / '../poteto-mode/references/runtime-adaptation.md').resolve().is_file(), path
     for path in (ROOT / 'pstack/runtime-agents').glob('*.md'):
         metadata = yaml.safe_load(path.read_text().split('---\n', 2)[1])
         assert metadata['name'] == path.stem, path

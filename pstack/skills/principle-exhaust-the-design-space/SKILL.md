@@ -4,7 +4,7 @@ description: "Apply when facing a novel UI interaction or architectural decision
 disable-model-invocation: true
 ---
 
-On Claude Code or Codex, first read [the runtime adaptation](../../compatibility.md). Apply its substitutions to this skill.
+On Claude Code or Codex, first read [the runtime adaptation](../poteto-mode/references/runtime-adaptation.md). Apply its substitutions to this skill.
 
 # Exhaust the Design Space
 

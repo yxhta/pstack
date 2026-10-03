@@ -4,7 +4,7 @@ description: "Periodic pass that keeps a project's verification skill and featur
 disable-model-invocation: true
 ---
 
-On Claude Code or Codex, first read [the runtime adaptation](../../compatibility.md). Apply its substitutions to this skill.
+On Claude Code or Codex, first read [the runtime adaptation](../poteto-mode/references/runtime-adaptation.md). Apply its substitutions to this skill.
 
 # Maintain a verification skill
 
