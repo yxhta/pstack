@@ -50,13 +50,25 @@ For a skills-only installation, clone this repository and keep it in place, then
 
 Read [runtime adaptation](tools/portable/assets/skills/poteto-mode/references/runtime-adaptation.md) for the tool mappings, paths, and limitations. Cursor-only `make-bot-ui`, Benny automations, cloud workers, and transcript parsers are not ported. Deslop is bundled at the same upstream pin. Other optional cursor-team-kit dependencies are not included. Installation and structural validation do not establish that every workflow runs correctly; check a real task in each runtime.
 
+## Runtime parity and limits
+
+The adapter preserves upstream review roles, participant counts, fresh-agent policy, and completion gates. The shared bundle intentionally removes `disable-model-invocation` so poteto-mode can route to other skills. This changes discovery and invocation availability; it does not grant permission for side effects. Capacity limits queue participants in waves. If the host cannot provide an independent reviewer or isolated context, that gate remains unverified. A self-review or a missing transcript does not count as passing evidence.
+
+Portable Comment Sicko is read-only. Its parent applies accepted, scoped comment deletions and checks the resulting diff before completing no-comments. A findings-only report does not complete the edit workflow.
+
+For worktree discovery, use `python3 <skills-root>/poteto-mode/scripts/portable-worktree-audit.py --repo <repo> --base <verified-ref>`. The script returns local Git evidence as JSON without fetching, reading chats, or deleting anything. Every worktree's usage remains unknown until independently checked. Clean or merged worktrees are not automatically safe to remove.
+
+For portable multi-phase plans, run `node <skills-root>/poteto-mode/scripts/check-portable-plan.mjs <plan.md>`. Add the runtime contract described in the adaptation under the program's Arm the program section. The companion preserves upstream structural gates and reports actual runtime assertions separately as unverified or blocked.
+
+The [parity report](docs/parity-report.md) separates source preservation, executable checks, and host-dependent behavior. Read the runtime adaptation before using bundled scripts. Their presence does not establish installed dependencies, scheduler persistence, or authorization for external actions.
+
 ## Upstream updates
 
-The **Sync pstack upstream** GitHub Actions workflow checks daily and can be run manually. It merges upstream main into a dedicated branch, records the upstream SHA, regenerates the portable package, validates it, and opens a PR. It never merges into main automatically. The complete repository history is retained because this is a GitHub fork. The PR body separates raw pstack paths from other changed paths, which include generated output, fork tooling, and other upstream plugins.
+The **Sync pstack upstream** GitHub Actions workflow checks daily and can be run manually. It merges upstream main into a dedicated branch, records the upstream SHA, regenerates the portable package, validates it, and opens a draft PR. It never merges into main automatically. The complete repository history is retained because this is a GitHub fork. The PR body separates raw pstack paths from other changed paths, which include generated output, fork tooling, and other upstream plugins.
 
 Enable GitHub Actions in this fork and allow Actions to create pull requests under **Settings → Actions → General**. Scheduled workflows may be disabled by GitHub after prolonged inactivity; run or re-enable the workflow when needed. If Actions is not allowed to create PRs, supply a suitably scoped repository secret `UPSTREAM_SYNC_TOKEN`; do not commit credentials. A PR opened with the default GITHUB_TOKEN does not trigger other PR workflows, so the sync job runs validation itself.
 
-The sync script requires a clean dedicated checkout at the latest `origin` default branch. Only one sync PR is kept open. Review and merge or close it before the next update. A merge conflict or validation failure fails the workflow with logs instead of overwriting the local adaptation. Resolve the conflicting upstream change on a branch and run the checks below. New upstream skills receive the same adaptation automatically.
+The sync script requires a clean dedicated checkout at the latest `origin` default branch. Only one sync PR is kept open. Review and merge or close it before the next update. A merge conflict or validation failure fails the workflow with logs instead of overwriting the local adaptation. Retries use an unused branch suffix when a closed PR or interrupted run left a branch behind; they never force-push that branch. Resolve the conflicting upstream change on a branch and run the checks below. New upstream skills receive the same adaptation automatically.
 
 ```sh
 python3 tools/portable/prepare.py
@@ -88,4 +100,4 @@ The startup hook reads only the `session hook` directive in the runtime model sh
 
 Codex hooks require review and trust through `/hooks`. Installing or enabling the plugin does not grant that trust. Changed hook definitions require another review. SessionStart supplies parent context only; delegated agents still receive explicit reading instructions.
 
-Deslop is generated directly from `cursor-team-kit/skills/deslop/SKILL.md` at the recorded upstream pin. Both the standalone skill and the poteto-mode reference use the same source. `DESLOP_SOURCE.md` and `LICENSE-CURSOR-TEAM-KIT` carry its provenance and MIT license in the native package and inside both skill folders, so skills-only copies retain them. The original 49 pstack skill bodies and playbooks remain unchanged.
+Deslop is generated directly from `cursor-team-kit/skills/deslop/SKILL.md` at the recorded upstream pin. Both the standalone skill and the poteto-mode reference use the same source. `DESLOP_SOURCE.md` and `LICENSE-CURSOR-TEAM-KIT` carry its provenance and MIT license in the native package and inside both skill folders, so skills-only copies retain them. All upstream pstack skill bodies and playbooks remain unchanged.

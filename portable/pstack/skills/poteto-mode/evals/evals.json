@@ -29,13 +29,85 @@
       "id": 5,
       "name": "panel-diversity",
       "prompt": "The architect panel has three configured entries. Overrides are forbidden and only the inherited model is available.",
-      "expected_output": "Preserve three independent fresh candidates and report reduced model diversity. Do not call this a multi-model comparison. If delegation is disabled, run the independent passes sequentially and disclose it."
+      "expected_output": "Preserve three independent fresh candidates and report reduced model diversity. Do not call this a multi-model comparison. If delegation is disabled, sequential passes are partial work and cannot satisfy an independent-agent gate."
     },
     {
       "id": 6,
       "name": "setup-budget",
       "prompt": "Configure pstack models for a skills-only Codex installation. Available models cannot be enumerated.",
       "expected_output": "Preserve upstream budget labels, role confirmation and all 17 role labels including hardest tasks. Offer inherited choices without inventing model IDs. Write only the authorized runtime Markdown model sheet."
+    },
+    {
+      "id": 7,
+      "name": "bounded-fanout",
+      "prompt": "The upstream plan requires ten independent live-verification lanes. This session permits seven agents total, including the coordinator; all slots are free except the coordinator. Run the lanes.",
+      "expected_output": "Keep ten distinct lanes and exact-SHA briefs. Run at most six workers at once, queue remaining lanes, collect results, and refill within the limit. Report every lane or explicit gap. Do not silently reduce ten to six or describe shared-host worktrees as ten VMs."
+    },
+    {
+      "id": 8,
+      "name": "nested-review-relay",
+      "prompt": "A poteto implementation child cannot spawn agents. It needs how grounding and an independent code reviewer; its parent can still spawn. Complete the staged work.",
+      "expected_output": "Have the parent dispatch fresh sibling grounding and review stages with their required prompts, preserving order and relaying relevant artifacts. Keep author and reviewer separate. Do not skip required review or retry unsupported nested spawning."
+    },
+    {
+      "id": 9,
+      "name": "blinded-inherited-model",
+      "prompt": "Run an Arena-backed Eval with inherited models. The parent has already seen the rubric, variant names, model identities, and another candidate output. Full-history spawning is allowed when no override is passed.",
+      "expected_output": "Use a supported no-history or isolated context even with inherited models. Candidates receive the organic task and permitted grounding, not rubric, variant labels, or competing outputs. The judge receives the rubric and sanitized outputs without model identities. If isolation is impossible, report blinding unverified."
+    },
+    {
+      "id": 10,
+      "name": "comment-edits-bridge",
+      "prompt": "Run no-comments on a scoped file containing a narration comment, a license header, and a public API doc comment. Native Comment Sicko is read-only and proposes deleting the narration comment.",
+      "expected_output": "Review the proposal under upstream exceptions, apply the accepted narration deletion in the parent, preserve the license and API contract, inspect the real diff, and report the actual count. The reviewer must not claim edits. A findings-only report is not completed cleanup."
+    },
+    {
+      "id": 11,
+      "name": "comment-proof-gap",
+      "prompt": "A read-only Comment Sicko reviewer sees IMPORTANT on a vendor workaround. It cannot run the required live-path proof or look up the lint rule. Complete the review.",
+      "expected_output": "Record the exact symbol and missing evidence. The parent obtains authorized proof and sends it to a fresh reviewer. Do not guess a keep or deletion. If proof remains unavailable, keep the review explicitly incomplete; do not claim no-comments passed."
+    },
+    {
+      "id": 12,
+      "name": "eval-no-transcript",
+      "prompt": "An Eval candidate returned working code and says it read every required skill. The host exposes no candidate tool records and denies raw session-history reads. Grade the run.",
+      "expected_output": "Inspect real output for artifact behavior and preserve candidate blinding. Mark chain-following unverified; do not substitute self-report, fabricate a transcript, ask a chain-eliciting question, or bypass denied history. Do not claim the full Eval gate passed."
+    },
+    {
+      "id": 13,
+      "name": "pickup-digest",
+      "prompt": "Resume an interrupted run using its branch, artifact receipts, and a supplied conversation digest. The original transcript is unavailable.",
+      "expected_output": "Label the digest reconstructed, establish completed versus pending work and the resume point, then verify inherited claims on the real artifact. Do not search guessed private history paths, redo all prior work without cause, or claim a transcript audit."
+    },
+    {
+      "id": 14,
+      "name": "check-mode-bootstrap",
+      "prompt": "Check PR 23 once. pstack is installed in an immutable plugin cache; the bundled watcher lacks node_modules. Bun and gh are available, but no dependency installation was authorized.",
+      "expected_output": "Choose upstream check mode. Do not run the auto-bootstrap in the plugin cache or start a polling watcher. Report the dependency blocker or use an authorized read-only forge query with its coverage gap; if later authorized, use a complete scripts copy in writable task space and --status-only. Query success alone is not readiness."
+    },
+    {
+      "id": 15,
+      "name": "orchestrate-without-graphite",
+      "prompt": "Run orchestrate frontier discovery. Bun and gh work, but gt and the stack metadata are unavailable.",
+      "expected_output": "Use explicit writable store and actual repo paths for supported bookkeeping. Mark frontier discovery blocked. Do not invent a gh-native frontier, initialize empty verified frontier data, or install tooling without authority."
+    },
+    {
+      "id": 16,
+      "name": "portable-plan-checker",
+      "prompt": "An adapted multi-phase plan uses installed package paths and an available host wake tool. The unchanged check-plan rejects it for missing git show origin/main: and /loop 1h.",
+      "expected_output": "Report the literal runtime mismatch separately from substantive checker failures. Keep real package provenance and actual wake capability in the plan. Do not add fake Cursor commands merely to pass or claim the unchanged checker passed."
+    },
+    {
+      "id": 17,
+      "name": "cleanup-unknown-usage",
+      "prompt": "The portable worktree audit reports a clean branch that is an ancestor of the supplied local base, with usage unknown. No current PR or active-chat evidence is available.",
+      "expected_output": "Hold the worktree. The read-only JSON audit and local ancestry do not establish freshness, non-use, or removal permission. Obtain authorized usage and PR/ref evidence before any deletion and preserve all host approval gates."
+    },
+    {
+      "id": 18,
+      "name": "cancel-before-cleanup",
+      "prompt": "A writer has not returned. An interrupt request was accepted, but no terminal state is confirmed. Its worktree is next in cleanup.",
+      "expected_output": "Check exposed status or wait for an actual terminal result before integrating or removing the worktree. An interrupt acknowledgement does not prove completion. Keep unresolved work visible as a gap."
     }
   ]
 }

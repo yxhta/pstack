@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+install_project=''
+body=''
+cleanup() {
+  [[ -z "$install_project" ]] || rm -rf -- "$install_project"
+  [[ -z "$body" ]] || rm -f -- "$body"
+}
+trap cleanup EXIT
+
 cd "$(git rev-parse --show-toplevel)"
 if [[ -n "$(git status --porcelain)" ]]; then
   echo 'Use a clean isolated checkout for upstream sync.' >&2
@@ -27,7 +35,17 @@ if git merge-base --is-ancestor "$upstream_sha" HEAD; then
   echo "Already contains upstream $upstream_sha."
   exit 0
 fi
-branch="sync/pstack-upstream-${upstream_sha:0:12}"
+branch_base="sync/pstack-upstream-${upstream_sha:0:12}"
+branch="$branch_base"
+suffix=1
+while :; do
+  remote_ref=$(git ls-remote --heads origin "refs/heads/$branch")
+  if ! git show-ref --verify --quiet "refs/heads/$branch" && [[ -z "$remote_ref" ]]; then
+    break
+  fi
+  branch="$branch_base-$suffix"
+  suffix=$((suffix + 1))
+done
 git switch -c "$branch"
 if ! git merge --no-ff --no-commit "$upstream_sha"; then
   echo 'Upstream conflicts with the adaptation. Resolve it manually; no changes were pushed.' >&2
@@ -48,13 +66,12 @@ python3 tools/portable/validate.py
 python3 -m unittest discover -s tools/portable -p 'test_*.py'
 checkout_path=$PWD
 install_project=$(mktemp -d)
-(cd "$install_project" && npx --yes skills add "$checkout_path" --skill '*' --agent claude-code codex --copy --yes)
+(cd "$install_project" && npx --yes skills add "$checkout_path/portable/pstack" --skill '*' --agent claude-code codex --copy --yes)
 python3 tools/portable/check-install.py "$install_project"
 git add -A
 git diff --cached --check
 git commit -m "chore: sync pstack upstream ${upstream_sha:0:12}"
 body=$(mktemp)
-trap 'rm -f "$body"' EXIT
 {
   echo "Merge cursor/plugins at $upstream_sha while preserving the Claude Code/Codex adaptation."
   echo
@@ -72,5 +89,5 @@ trap 'rm -f "$body"' EXIT
   echo '```'
 } > "$body"
 git push origin "$branch"
-gh pr create --repo "$GH_REPO" --base "$base" --head "$branch" \
+gh pr create --draft --repo "$GH_REPO" --base "$base" --head "$branch" \
   --title "chore: sync pstack upstream ${upstream_sha:0:12}" --body-file "$body"
