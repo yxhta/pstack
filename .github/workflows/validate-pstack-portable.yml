@@ -38,6 +38,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -50,5 +53,5 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/pstack-skills-smoke"
           cd "$RUNNER_TEMP/pstack-skills-smoke"
-          npx --yes skills add "$GITHUB_WORKSPACE" --skill '*' --agent claude-code codex --copy --yes
+          npx --yes skills add "$GITHUB_WORKSPACE/portable/pstack" --skill '*' --agent claude-code codex --copy --yes
           python3 "$GITHUB_WORKSPACE/tools/portable/check-install.py" "$RUNNER_TEMP/pstack-skills-smoke"

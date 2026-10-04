@@ -36,6 +36,8 @@ ArtifactTree = dict[str, Artifact]
 
 
 def read_tree(root: Path) -> ArtifactTree:
+    if root.is_symlink() or not root.is_dir():
+        raise ValueError(f'Expected a real package directory: {root}')
     tree = {}
     for path in sorted(root.rglob('*')):
         if path.is_symlink():
@@ -231,9 +233,23 @@ def prepare_package(layout: PackageLayout, upstream_commit: str, *, check: bool)
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(artifact.data)
             path.chmod(artifact.mode)
-        if destination.exists():
-            shutil.rmtree(destination)
-        staged.rename(destination)
+        # The backup lives outside the staging directory so failed rollback cannot
+        # make TemporaryDirectory cleanup erase the last usable bundle.
+        backup = Path(temporary + '-previous')
+        try:
+            if destination.exists():
+                destination.rename(backup)
+            staged.rename(destination)
+        except BaseException:
+            if backup.exists():
+                try:
+                    backup.rename(destination)
+                except OSError as error:
+                    raise RuntimeError(f'Could not restore generated package; previous bundle retained at {backup}') from error
+            raise
+        else:
+            if backup.exists():
+                shutil.rmtree(backup)
     print(f'Regenerated {destination}')
 
 

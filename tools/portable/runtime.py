@@ -18,6 +18,9 @@ REQUIRED_LINKS[ADAPTATION] = (
     'skills/poteto-mode/references/claude-dispatch.md',
     'skills/poteto-mode/references/codex-dispatch.md',
     'skills/poteto-mode/references/deslop.md',
+    'skills/poteto-mode/scripts/portable-worktree-audit.py',
+    'skills/poteto-mode/scripts/check-portable-plan.mjs',
+    'skills/poteto-mode/scripts/check-plan.mjs',
 )
 
 

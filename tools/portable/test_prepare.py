@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+from unittest import mock
 
 from prepare import Artifact, NOTICE, PackageLayout, prepare, prepare_package, read_tree, verify_source
 
@@ -109,6 +110,74 @@ class PrepareTests(unittest.TestCase):
             prepare_package(PackageLayout(self.source, self.assets, self.source), 'a' * 40, check=False)
         with self.assertRaisesRegex(ValueError, 'Unsafe'):
             prepare_package(PackageLayout(self.source, self.assets, self.source / 'portable/pstack'), 'a' * 40, check=False)
+
+    def test_input_root_symlinks_are_rejected(self):
+        saved = self.assets.with_name('real-assets')
+        self.assets.rename(saved)
+        self.assets.symlink_to(saved, target_is_directory=True)
+        with self.assertRaisesRegex(ValueError, 'real package directory'):
+            self.generate()
+
+    def test_publication_failure_restores_previous_package(self):
+        self.generate()
+        before = read_tree(self.layout.published)
+        (self.assets / 'new.md').write_text('new resource')
+        original_rename = Path.rename
+
+        def fail_publication(path, target):
+            if path.name == 'package':
+                raise OSError('simulated publication failure')
+            return original_rename(path, target)
+
+        with mock.patch.object(Path, 'rename', fail_publication):
+            with self.assertRaisesRegex(OSError, 'simulated publication failure'):
+                self.generate()
+        self.assertEqual(read_tree(self.layout.published), before)
+        self.assertEqual(list(self.layout.published.parent.glob('.pstack-*')), [])
+        self.generate()
+        self.generate(check=True)
+
+    def test_interrupt_after_backup_rename_restores_previous_package(self):
+        self.generate()
+        before = read_tree(self.layout.published)
+        (self.assets / 'new.md').write_text('new resource')
+        original_rename = Path.rename
+
+        def interrupt_after_backup(path, target):
+            result = original_rename(path, target)
+            if path == self.layout.published:
+                raise KeyboardInterrupt('interrupted after backup')
+            return result
+
+        with mock.patch.object(Path, 'rename', interrupt_after_backup):
+            with self.assertRaisesRegex(KeyboardInterrupt, 'interrupted after backup'):
+                self.generate()
+        self.assertEqual(read_tree(self.layout.published), before)
+        self.assertEqual(list(self.layout.published.parent.glob('.pstack-*')), [])
+        self.generate()
+        self.generate(check=True)
+
+    def test_failed_rollback_preserves_recoverable_backup(self):
+        self.generate()
+        before = read_tree(self.layout.published)
+        (self.assets / 'new.md').write_text('new resource')
+        original_rename = Path.rename
+
+        def fail_publication_and_rollback(path, target):
+            if path.name == 'package' or path.name.endswith('-previous'):
+                raise OSError('simulated filesystem failure')
+            return original_rename(path, target)
+
+        with mock.patch.object(Path, 'rename', fail_publication_and_rollback):
+            with self.assertRaisesRegex(RuntimeError, 'previous bundle retained at'):
+                self.generate()
+        backups = list(self.layout.published.parent.glob('.pstack-*-previous'))
+        self.assertEqual(len(backups), 1)
+        self.assertEqual(read_tree(backups[0]), before)
+        self.assertFalse(self.layout.published.exists())
+        backups[0].rename(self.layout.published)
+        self.generate()
+        self.generate(check=True)
 
     def test_upstream_header_merges_without_adapter_conflict(self):
         def git(*args):
