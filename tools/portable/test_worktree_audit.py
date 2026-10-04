@@ -20,7 +20,13 @@ class WorktreeAuditTests(unittest.TestCase):
         self.repo = self.root / 'repo with spaces'
         self.env = {key: value for key, value in os.environ.items() if not key.startswith('GIT_')}
         self.env.update(HOME=str(self.root), XDG_CONFIG_HOME=str(self.root / '.config'),
-                        GIT_CONFIG_NOSYSTEM='1', LC_ALL='C')
+                        LC_ALL='C')
+        real_git = shutil.which('git', path=self.env.get('PATH'))
+        self.assertIsNotNone(real_git, 'Git is required for the audit fixtures')
+        self.real_git = str(Path(real_git).resolve())
+        self.system_config = self.root / 'system.gitconfig'
+        self.system_config.write_text('')
+        self.env = self.git_wrapper('')
         self.git('init', '-b', 'trunk', str(self.repo), cwd=self.root)
         self.git('config', 'user.name', 'Audit Test')
         self.git('config', 'user.email', 'audit@example.invalid')
@@ -183,11 +189,13 @@ class WorktreeAuditTests(unittest.TestCase):
         self.assertIsNone(row['tracked_changes'])
 
     def git_wrapper(self, body):
-        directory = self.root / 'bin'
-        directory.mkdir()
+        directory = Path(tempfile.mkdtemp(prefix='git bin ', dir=self.root))
         wrapper = directory / 'git'
+        # Restore fixture isolation after the audit deliberately strips inherited GIT_*.
         wrapper.write_text(f'#!{sys.executable}\nimport os, sys, time\n{body}\n'
-                           f'os.execv({shutil.which("git")!r}, ["git", *sys.argv[1:]])\n')
+                           'os.environ.pop("GIT_CONFIG_NOSYSTEM", None)\n'
+                           f'os.environ["GIT_CONFIG_SYSTEM"] = {str(self.system_config)!r}\n'
+                           f'os.execv({self.real_git!r}, ["git", *sys.argv[1:]])\n')
         wrapper.chmod(0o755)
         return self.env | {'PATH': str(directory) + os.pathsep + self.env['PATH']}
 
@@ -256,6 +264,12 @@ class WorktreeAuditTests(unittest.TestCase):
         self.assertFalse((self.root / 'unwanted-index').exists())
 
     def test_clean_and_process_filters_are_rejected_before_they_can_execute(self):
+        self.assert_filters_rejected()
+
+    def test_system_clean_and_process_filters_are_rejected_before_they_can_execute(self):
+        self.assert_filters_rejected('--file', str(self.system_config))
+
+    def assert_filters_rejected(self, *config_options):
         marker = self.root / 'filter-ran'
         executable = self.root / 'unsafe-filter'
         executable.write_text(f'#!{sys.executable}\nfrom pathlib import Path\n'
@@ -265,7 +279,8 @@ class WorktreeAuditTests(unittest.TestCase):
         (self.repo / 'tracked').write_text('changed!\n')
         for kind in ('clean', 'process'):
             with self.subTest(kind=kind):
-                self.git('config', 'filter.audit.' + kind, shlex.quote(str(executable)))
+                self.git('config', *config_options, 'filter.audit.' + kind,
+                         shlex.quote(str(executable)))
                 row = self.row(self.invoke('--base', 'trunk', code=1), self.repo)
                 self.assertEqual(row['disposition'], 'audit-error')
                 self.assertIsNone(row['tracked_changes'])
@@ -276,7 +291,7 @@ class WorktreeAuditTests(unittest.TestCase):
                                capture_output=True, timeout=5)
                 self.assertTrue(marker.exists(), 'Fixture must demonstrate the filter can execute')
                 marker.unlink()
-                self.git('config', '--unset', 'filter.audit.' + kind)
+                self.git('config', *config_options, '--unset', 'filter.audit.' + kind)
 
     def test_submodule_filter_configuration_is_not_executed(self):
         source = self.root / 'submodule source'
@@ -302,9 +317,12 @@ class WorktreeAuditTests(unittest.TestCase):
 
     def test_inherited_git_config_and_trace_settings_cannot_execute_or_write(self):
         marker = self.root / 'git-trace'
-        env = self.env | {'GIT_CONFIG_COUNT': '1', 'GIT_CONFIG_KEY_0': 'core.fsmonitor',
-                          'GIT_CONFIG_VALUE_0': 'false', 'GIT_CONFIG_PARAMETERS': 'invalid config',
-                          'GIT_TRACE': str(marker)}
+        env = self.git_wrapper('assert not any(key.startswith("GIT_CONFIG_") '
+                               'for key in os.environ)')
+        env.update(GIT_CONFIG_COUNT='1', GIT_CONFIG_KEY_0='core.fsmonitor',
+                   GIT_CONFIG_VALUE_0='false', GIT_CONFIG_PARAMETERS='invalid config',
+                   GIT_CONFIG_SYSTEM=str(self.root / 'untrusted-system-config'),
+                   GIT_CONFIG_NOSYSTEM='1', GIT_TRACE=str(marker))
         row = self.row(self.invoke('--base', 'trunk', env=env), self.repo)
         self.assertEqual(row['disposition'], 'hold-unknown-usage')
         self.assertFalse(marker.exists())

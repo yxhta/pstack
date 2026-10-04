@@ -2,7 +2,7 @@
 
 ## Scope
 
-This change updates the GitHub fork at `cbc4793b6309fb10e5709ff40754e93f376e9edb` to the observed upstream commit `e43c7ee26e0038c6c1fa8380dd34ce86ff94cb2a` (pstack 0.15.9). Work stays local. It does not publish a branch, open a PR, alter authentication, or change a user's global installation.
+This change updates the GitHub fork at `cbc4793b6309fb10e5709ff40754e93f376e9edb` to the observed upstream commit `e43c7ee26e0038c6c1fa8380dd34ce86ff94cb2a` (pstack 0.15.9). The user subsequently authorized publication to `yxhta/pstack` on `improve/upstream-parity`. Publication preserves the reviewed Git tree and file modes; the original local merge history is retained in the delivery bundle. No PR, merge, authentication change, or global installation change is included.
 
 The definition of done is separate for each kind of evidence:
 
@@ -38,6 +38,7 @@ The [baseline matrix](parity-baseline.md) inventories every upstream skill, prin
 | Script bootstrap | Read-only-looking helpers install dependencies into their own directory | Preflight dependencies and use an authorized writable scripts copy | Dependency installation and suites run in a disposable copy |
 | Cleanup discovery | Cursor history, BSD commands, space splitting, assumed main, and closed-PR heuristics could mislead | New local-only JSON audit with conservative holds and unknown usage | Real disposable Git-repository CLI regressions |
 | Git startup tracing | Global Trace2 configuration still wrote files before command-line overrides | Disable normal/event/perf trace targets in the child environment before Git starts | Positive controls, unchanged existing trace files, preserved global filters/excludes, and an independent reproduction |
+| CI fixture isolation | Production environment sanitization exposed GitHub runner system filters to supposedly clean test repositories | Test-only Git wrappers select a temporary system configuration after sanitization; production behavior is unchanged | Synthetic runner configuration reproduced 18 failing audit assertions; clean fixtures and explicit system-filter refusal are covered |
 | Portable plan checks | Honest installed-snapshot and active-session plans failed two Cursor-specific marker checks | Companion validates a scoped runtime contract while running the untouched upstream structural checker | Mutation tests retain lane, evidence, perf, and review gates; changed-plan race and nested examples fail closed |
 | Default skills installation | Per-skill Claude symlinks did not share the companion's lexical root | Resolve aliases to the exact same canonical companion and required resources | Actual Skills CLI default layout plus mixed-bundle/escape regressions |
 | Install verification | Python optimization removed assertions and falsely verified an empty installation | Explicit errors, complete file/content/mode inventories, and copied-tree symlink rejection | Subprocess tests under PYTHONOPTIMIZE 0, 1, and 2 |
@@ -47,7 +48,9 @@ The [baseline matrix](parity-baseline.md) inventories every upstream skill, prin
 
 ## Verification record
 
-Final integration on Python 3.12.14 with PyYAML 6.0.3 passes 64 Python tests (10 generator, 6 installation/validator, 6 sync, 5 runtime/hook, 22 worktree-audit tests, and 15 portable-plan tests). Source/generation checks, validate.py under ordinary Python and PYTHONOPTIMIZE=2, shell syntax, and whitespace checks pass. Earlier baseline checks passed 11 Python tests and validated 51 skills.
+The cloud integration baseline on Python 3.12.14 with PyYAML 6.0.3 passed 64 Python tests. The publication follow-up passes all 65 tests both normally and under synthetic runner system filters, including the added system-filter regression (10 generator, 6 installation/validator, 6 sync, 5 runtime/hook, 23 worktree-audit tests, and 15 portable-plan tests). Source/generation checks, validate.py under ordinary Python and PYTHONOPTIMIZE=2, shell syntax, and whitespace checks pass. Earlier baseline checks passed 11 Python tests and validated 51 skills.
+
+The first published tree exactly matched the reviewed local tree. Its [GitHub Actions run](https://github.com/yxhta/pstack/actions/runs/37208309606) passed source integrity but exposed the fixture isolation issue above. The correction does not disable system filters in production or alter package contents. The delivery receipt records the final remote commit and CI outcome.
 
 - The actual skills CLI 1.7.0 installed all 52 skills for Claude Code and Codex into an isolated project. File bytes, executable modes, and bundled resources matched. The default per-skill symlink installation was also exercised through the Claude alias root, including companion execution and complete byte/mode comparison.
 - Official Claude Code 2.1.289 plugin validation passed without signing in, using an isolated configuration directory.
