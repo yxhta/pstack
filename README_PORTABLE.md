@@ -1,6 +1,8 @@
 # pstack for Claude Code and Codex
 
-This is a fork of [cursor/plugins](https://github.com/cursor/plugins), maintained for the pstack skills only. Upstream's playbooks and principles are shared by both runtimes. The original [pstack README](pstack/README.md) remains the Cursor guide; the instructions here apply to this fork.
+This is a fork of [cursor/plugins](https://github.com/cursor/plugins), maintained for the pstack and Thermos skills. Upstream's playbooks and principles are shared by both runtimes. The original [pstack README](pstack/README.md) remains the Cursor guide; the instructions here apply to this fork.
+
+For Thermos installation and review commands, see [Thermos for Claude Code and Codex](docs/thermos-portable.md).
 
 ## Install
 

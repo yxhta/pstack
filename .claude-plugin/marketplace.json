@@ -1,6 +1,6 @@
 {
   "name": "yxhta-pstack",
-  "description": "Upstream pstack adapted for Claude Code and Codex.",
+  "description": "Upstream pstack and Thermos adapted for Claude Code and Codex.",
   "owner": {
     "name": "yxhta"
   },
@@ -9,6 +9,11 @@
       "name": "pstack",
       "source": "./portable/pstack",
       "description": "Upstream pstack workflows adapted for Claude Code and Codex."
+    },
+    {
+      "name": "thermos",
+      "source": "./portable/thermos",
+      "description": "Independent correctness and code-quality branch reviews."
     }
   ]
 }

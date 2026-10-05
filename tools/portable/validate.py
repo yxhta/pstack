@@ -17,6 +17,45 @@ def require(condition, message):
         raise ValueError(message)
 
 
+def validate_thermos():
+    package = ROOT / 'portable/thermos'
+    skills = {'thermos', 'thermo-nuclear-review', 'thermo-nuclear-code-quality-review'}
+    for host in ('claude', 'codex'):
+        manifest = json.loads((package / f'.{host}-plugin/plugin.json').read_text())
+        require(manifest['name'] == 'thermos', f'Invalid {host} Thermos name')
+        require((package / manifest['skills']).resolve() == package / 'skills', f'Invalid {host} Thermos skills path')
+        marketplace_path = '.claude-plugin/marketplace.json' if host == 'claude' else '.agents/plugins/marketplace.json'
+        marketplace = json.loads((ROOT / marketplace_path).read_text())
+        entries = [entry for entry in marketplace['plugins'] if entry['name'] == 'thermos']
+        require(len(entries) == 1, f'Expected one {host} Thermos marketplace entry')
+        source = entries[0]['source'] if host == 'claude' else entries[0]['source']['path']
+        require(source == './portable/thermos', f'{host} marketplace must use portable Thermos')
+        if host == 'claude':
+            expected = {f'./runtime-agents/{role}-subagent.md' for role in skills - {'thermos'}}
+            require(set(manifest['agents']) == expected, 'Wrong Thermos native wrappers')
+            for name in expected:
+                text = (package / name).read_text()
+                metadata = yaml.safe_load(text.split('---\n', 2)[1])
+                require(metadata['model'] == 'inherit', 'Thermos agents must inherit the model')
+                require(metadata['tools'] == 'Read, Grep, Glob', 'Thermos native reviewers must be read-only')
+                for target in re.findall(r'\$\{CLAUDE_PLUGIN_ROOT\}([^\s)]+)', text):
+                    resolved = (package / target.lstrip('/')).resolve()
+                    require(resolved.is_relative_to(package) and resolved.is_file(), f'Invalid Thermos wrapper link: {target}')
+    actual = {p.parent.name for p in (package / 'skills').glob('*/SKILL.md')}
+    require(actual == skills, 'Thermos skill inventory differs')
+    for name in skills:
+        skill = package / 'skills' / name
+        metadata = yaml.safe_load((skill / 'SKILL.md').read_text().split('---\n', 2)[1])
+        require(metadata['name'] == name and metadata['disable-model-invocation'] is True, f'Thermos invocation metadata differs: {name}')
+        policy = yaml.safe_load((skill / 'agents/openai.yaml').read_text())
+        require(policy['policy']['allow_implicit_invocation'] is False, f'Thermos Codex invocation policy differs: {name}')
+        require((skill / '../thermos/references/runtime-adaptation.md').resolve().is_file(), f'Missing Thermos adaptation: {name}')
+        require((skill / 'LICENSE').is_file(), f'Missing Thermos skill license: {name}')
+    for role in skills - {'thermos'}:
+        require((package / f'skills/thermos/references/agents/{role}-subagent.md').is_file(), f'Missing Thermos reviewer: {role}')
+    print('Validated 3 Thermos skills, both manifests, marketplaces, and 2 read-only Claude wrappers.')
+
+
 def main():
     subprocess.run([sys.executable, str(ROOT / 'tools/portable/prepare.py'), '--check'], check=True)
     validate_resources(ROOT / 'portable/pstack', ROOT / 'pstack')
@@ -59,6 +98,7 @@ def main():
     yaml.safe_load((ROOT / '.github/workflows/sync-pstack-upstream.yml').read_text())
     require((ROOT / 'portable/pstack/LICENSE').is_file(), 'Missing package license')
     print(f'Validated {len(skills)} shared skills, both manifests, agents, and sync configuration.')
+    validate_thermos()
 
 
 if __name__ == '__main__':

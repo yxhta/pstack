@@ -4,6 +4,10 @@ import argparse
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+RESOURCES = {
+    'pstack': ('poteto-mode', 'portable-agents', ('poteto-agent.md', 'comment-sicko.md')),
+    'thermos': ('thermos', 'agents', ('thermo-nuclear-review-subagent.md', 'thermo-nuclear-code-quality-review-subagent.md')),
+}
 
 
 def inventory(root: Path) -> dict[str, tuple[bytes, bool]]:
@@ -20,7 +24,8 @@ def inventory(root: Path) -> dict[str, tuple[bytes, bool]]:
     return files
 
 
-def check_install(project: Path, source_root: Path) -> int:
+def check_install(project: Path, source_root: Path, package='pstack') -> int:
+    entry, directory, agents = RESOURCES[package]
     expected = inventory(source_root)
     skills = {name.split('/')[0] for name in expected if len(name.split('/')) == 2 and name.endswith('/SKILL.md')}
     if not skills:
@@ -39,11 +44,11 @@ def check_install(project: Path, source_root: Path) -> int:
         if changed:
             raise ValueError(f'{runtime}: installed content or executable modes differ: {", ".join(changed)}')
         for skill in skills:
-            adaptation = installed_root / skill / '../poteto-mode/references/runtime-adaptation.md'
+            adaptation = installed_root / skill / f'../{entry}/references/runtime-adaptation.md'
             if not adaptation.resolve().is_relative_to(installed_root) or not adaptation.is_file():
                 raise ValueError(f'Missing or unsafe runtime adaptation: {adaptation}')
-        for agent in ('poteto-agent.md', 'comment-sicko.md'):
-            path = installed_root / 'poteto-mode/references/portable-agents' / agent
+        for agent in agents:
+            path = installed_root / entry / 'references' / directory / agent
             if not path.is_file():
                 raise ValueError(f'Missing agent reference: {path}')
         print(f'{runtime}: {len(skills)} installed skills and all bundled resources verified.')
@@ -53,9 +58,10 @@ def check_install(project: Path, source_root: Path) -> int:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('project', type=Path)
+    parser.add_argument('--package', choices=('pstack', 'thermos'), default='pstack')
     args = parser.parse_args()
     try:
-        check_install(args.project, ROOT / 'portable/pstack/skills')
+        check_install(args.project, ROOT / 'portable' / args.package / 'skills', args.package)
     except (OSError, ValueError) as error:
         parser.error(str(error))
 

@@ -66,8 +66,11 @@ python3 tools/portable/validate.py
 python3 -m unittest discover -s tools/portable -p 'test_*.py'
 checkout_path=$PWD
 install_project=$(mktemp -d)
-(cd "$install_project" && npx --yes skills add "$checkout_path/portable/pstack" --skill '*' --agent claude-code codex --copy --yes)
-python3 tools/portable/check-install.py "$install_project"
+for package in pstack thermos; do
+  mkdir "$install_project/$package"
+  (cd "$install_project/$package" && npx --yes skills add "$checkout_path/portable/$package" --skill '*' --agent claude-code codex --copy --yes)
+  python3 tools/portable/check-install.py "$install_project/$package" --package "$package"
+done
 git add -A
 git diff --cached --check
 git commit -m "chore: sync pstack upstream ${upstream_sha:0:12}"
