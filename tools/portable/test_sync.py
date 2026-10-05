@@ -102,12 +102,13 @@ if os.environ.get('FAIL_STEP') == sys.argv[1]:
     def calls(self):
         return [json.loads(line) for line in self.log.read_text().splitlines()]
 
-    def assert_temporary_installs_removed(self):
+    def assert_temporary_installs_removed(self, packages=('pstack', 'thermos')):
         installs = [call for call in self.calls() if call['tool'] == 'npx']
         self.assertTrue(installs)
         for install in installs:
             self.assertFalse(Path(install['cwd']).exists(), install)
-            self.assertTrue(install['args'][3].endswith('/portable/pstack'), install)
+            self.assertIn(Path(install['args'][3]).name, ('pstack', 'thermos'), install)
+        self.assertEqual({Path(install['args'][3]).name for install in installs}, set(packages))
 
     def test_closed_pr_retry_uses_new_branch_without_overwriting_previous(self):
         first = self.sync()
@@ -160,7 +161,7 @@ if os.environ.get('FAIL_STEP') == sys.argv[1]:
         self.assertIn('simulated check failure', result.stdout)
         self.assertEqual(self.branches(), {})
         self.assertFalse(any(call['args'][:2] == ['pr', 'create'] for call in self.calls()))
-        self.assert_temporary_installs_removed()
+        self.assert_temporary_installs_removed(('pstack',))
 
     def test_merge_conflict_never_pushes_or_runs_install(self):
         (self.checkout / 'source.txt').write_text('conflicting fork edit\n')

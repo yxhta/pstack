@@ -1,0 +1,16 @@
+{
+  "name": "thermos",
+  "version": "1.0.0",
+  "description": "Thermos correctness and code-quality reviews for Claude Code and Codex.",
+  "author": {
+    "name": "yxhta"
+  },
+  "homepage": "https://github.com/yxhta/pstack",
+  "repository": "https://github.com/yxhta/pstack",
+  "license": "MIT",
+  "skills": "./skills/",
+  "agents": [
+    "./runtime-agents/thermo-nuclear-review-subagent.md",
+    "./runtime-agents/thermo-nuclear-code-quality-review-subagent.md"
+  ]
+}

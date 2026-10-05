@@ -1,3 +1,5 @@
 pstack/** -whitespace
 README.md -whitespace
 portable/pstack/** -whitespace linguist-generated=true
+thermos/** -whitespace
+portable/thermos/** -whitespace linguist-generated=true

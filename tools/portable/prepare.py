@@ -91,6 +91,8 @@ def prepare(text, name):
 
 
 def render_package(layout: PackageLayout, upstream_commit: str) -> ArtifactTree:
+    if layout.upstream.name == 'thermos':
+        return render_thermos(layout, upstream_commit)
     tree = read_tree(layout.upstream)
     for name, artifact in list(tree.items()):
         if re.fullmatch(r'skills/[^/]+/SKILL.md', name):
@@ -154,6 +156,10 @@ def render_package(layout: PackageLayout, upstream_commit: str) -> ArtifactTree:
     manifest = json.loads(overlay['.claude-plugin/plugin.json'].data)
     manifest['agents'] = agent_paths
     overlay['.claude-plugin/plugin.json'] = Artifact((json.dumps(manifest, indent=2) + '\n').encode(), 0o644)
+    return add_overlay(tree, overlay, upstream_commit)
+
+
+def add_overlay(tree: ArtifactTree, overlay: ArtifactTree, upstream_commit: str) -> ArtifactTree:
     version = json.loads(tree['.cursor-plugin/plugin.json'].data)['version']
     digest = hashlib.sha256()
     for name, artifact in sorted((tree | overlay).items()):
@@ -178,9 +184,47 @@ def render_package(layout: PackageLayout, upstream_commit: str) -> ArtifactTree:
     return tree
 
 
-def verify_source(root: Path, upstream_commit: str) -> None:
-    entries = subprocess.check_output(['git', 'ls-tree', '-rz', upstream_commit, '--', 'pstack', 'README.md', 'cursor-team-kit/skills/deslop/SKILL.md', 'cursor-team-kit/LICENSE'], cwd=root).split(b'\0')
-    if (root / 'pstack').is_symlink():
+THERMOS_NOTICE = ('On Claude Code or Codex, first read [the runtime adaptation]'
+                  '(../thermos/references/runtime-adaptation.md). Apply its host substitutions to this skill.\n\n')
+THERMOS_ROLES = ('thermo-nuclear-review', 'thermo-nuclear-code-quality-review')
+
+
+def render_thermos(layout: PackageLayout, upstream_commit: str) -> ArtifactTree:
+    tree = read_tree(layout.upstream)
+    overlay = read_tree(layout.assets)
+    skills = {Path(name).parent.name for name in tree if re.fullmatch(r'skills/[^/]+/SKILL.md', name)}
+    if skills != {'thermos', *THERMOS_ROLES}:
+        raise ValueError(f'Thermos skill inventory changed; review the adapter: {sorted(skills)}')
+    for skill in sorted(skills):
+        name = f'skills/{skill}/SKILL.md'
+        metadata, _ = frontmatter(tree[name].data.decode())
+        if metadata['name'] != skill:
+            raise ValueError(f'Thermos skill name differs: {name}')
+        original = tree[name].data.decode()
+        boundary = original.index('\n---\n', 4) + 5
+        tree[name] = Artifact((original[:boundary] + THERMOS_NOTICE + original[boundary:]).encode(), tree[name].mode)
+        policy = f'skills/{skill}/agents/openai.yaml'
+        if policy in overlay:
+            raise ValueError(f'Portable asset collides with invocation policy: {policy}')
+        overlay[policy] = Artifact(b'policy:\n  allow_implicit_invocation: false\n', 0o644)
+        license_path = f'skills/{skill}/LICENSE'
+        if license_path in overlay:
+            raise ValueError(f'Portable asset collides with license: {license_path}')
+        overlay[license_path] = tree['LICENSE']
+    for role in THERMOS_ROLES:
+        name = f'agents/{role}-subagent.md'
+        if name not in tree:
+            raise ValueError(f'Missing Thermos source agent: {name}')
+        target = f'skills/thermos/references/agents/{role}-subagent.md'
+        if target in overlay:
+            raise ValueError(f'Portable asset collides with agent reference: {target}')
+        overlay[target] = tree[name]
+    return add_overlay(tree, overlay, upstream_commit)
+
+
+def verify_source(root: Path, upstream_commit: str, packages=('pstack',)) -> None:
+    entries = subprocess.check_output(['git', 'ls-tree', '-rz', upstream_commit, '--', *packages, 'README.md', 'cursor-team-kit/skills/deslop/SKILL.md', 'cursor-team-kit/LICENSE'], cwd=root).split(b'\0')
+    if any((root / name).is_symlink() for name in packages):
         raise ValueError('Upstream source root must not be a symlink')
     expected = {}
     for entry in entries:
@@ -191,10 +235,10 @@ def verify_source(root: Path, upstream_commit: str) -> None:
         if kind != b'blob':
             raise ValueError(f'Unsupported upstream Git object: {name.decode()}')
         expected[name.decode()] = (mode.decode(), subprocess.check_output(['git', 'cat-file', 'blob', oid.decode()], cwd=root))
-    if 'README.md' not in expected or not any(p.startswith('pstack/') for p in expected):
-        raise ValueError('Pin must contain root README.md and pstack files')
+    if 'README.md' not in expected or any(not any(p.startswith(name + '/') for p in expected) for name in packages):
+        raise ValueError('Pin must contain root README.md and package files')
     actual = {}
-    paths = list((root / 'pstack').rglob('*')) + [root / 'README.md', root / 'cursor-team-kit/skills/deslop/SKILL.md', root / 'cursor-team-kit/LICENSE']
+    paths = [path for name in packages for path in (root / name).rglob('*')] + [root / 'README.md', root / 'cursor-team-kit/skills/deslop/SKILL.md', root / 'cursor-team-kit/LICENSE']
     for path in paths:
         if path.is_symlink():
             actual[path.relative_to(root).as_posix()] = ('120000', path.readlink().as_posix().encode())
@@ -209,7 +253,7 @@ def verify_source(root: Path, upstream_commit: str) -> None:
 
 def prepare_package(layout: PackageLayout, upstream_commit: str, *, check: bool) -> None:
     destination = layout.published
-    if destination.absolute() != layout.upstream.parent.absolute() / 'portable/pstack' or destination.is_symlink() or destination.parent.is_symlink():
+    if layout.upstream.name not in ('pstack', 'thermos') or destination.absolute() != layout.upstream.parent.absolute() / 'portable' / layout.upstream.name or destination.is_symlink() or destination.parent.is_symlink():
         raise ValueError(f'Unsafe generated destination: {destination}')
     resolved = destination.resolve()
     for source in (layout.upstream.resolve(), layout.assets.resolve()):
@@ -225,7 +269,7 @@ def prepare_package(layout: PackageLayout, upstream_commit: str, *, check: bool)
     if not changed:
         return
     destination.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix='.pstack-', dir=destination.parent) as temporary:
+    with tempfile.TemporaryDirectory(prefix=f'.{layout.upstream.name}-', dir=destination.parent) as temporary:
         staged = Path(temporary) / 'package'
         staged.mkdir()
         for name, artifact in desired.items():
@@ -258,8 +302,9 @@ def main():
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
     pin = json.loads((ROOT / 'tools/portable/upstream.json').read_text())['last_merged_sha']
-    verify_source(ROOT, pin)
-    prepare_package(PackageLayout(ROOT / 'pstack', ROOT / 'tools/portable/assets', ROOT / 'portable/pstack'), pin, check=args.check)
+    verify_source(ROOT, pin, packages=('pstack', 'thermos'))
+    for package, assets in (('pstack', 'assets'), ('thermos', 'thermos-assets')):
+        prepare_package(PackageLayout(ROOT / package, ROOT / 'tools/portable' / assets, ROOT / 'portable' / package), pin, check=args.check)
 
 
 if __name__ == '__main__':

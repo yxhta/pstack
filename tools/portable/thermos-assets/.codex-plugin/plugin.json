@@ -1,0 +1,19 @@
+{
+  "name": "thermos",
+  "version": "1.0.0",
+  "description": "Thermos correctness and code-quality reviews for Claude Code and Codex.",
+  "author": {
+    "name": "yxhta"
+  },
+  "homepage": "https://github.com/yxhta/pstack",
+  "repository": "https://github.com/yxhta/pstack",
+  "license": "MIT",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Thermos",
+    "shortDescription": "Independent correctness and code-quality reviews",
+    "defaultPrompt": [
+      "Use thermos to review the current changes."
+    ]
+  }
+}

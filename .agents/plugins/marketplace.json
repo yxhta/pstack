@@ -18,6 +18,21 @@
         ]
       },
       "category": "Developer Tools"
+    },
+    {
+      "name": "thermos",
+      "source": {
+        "source": "local",
+        "path": "./portable/thermos"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL",
+        "products": [
+          "CODEX"
+        ]
+      },
+      "category": "Developer Tools"
     }
   ]
 }

@@ -1,14 +1,16 @@
-name: Validate portable pstack
+name: Validate portable pstack and Thermos
 
 on:
   push:
     paths:
       - 'pstack/**'
+      - 'thermos/**'
       - 'cursor-team-kit/skills/deslop/**'
       - 'cursor-team-kit/LICENSE'
       - 'portable/**'
       - 'README.md'
       - 'README_PORTABLE.md'
+      - 'docs/thermos-*.md'
       - '.gitattributes'
       - 'tools/portable/**'
       - '.claude-plugin/**'
@@ -17,11 +19,13 @@ on:
   pull_request:
     paths:
       - 'pstack/**'
+      - 'thermos/**'
       - 'cursor-team-kit/skills/deslop/**'
       - 'cursor-team-kit/LICENSE'
       - 'portable/**'
       - 'README.md'
       - 'README_PORTABLE.md'
+      - 'docs/thermos-*.md'
       - '.gitattributes'
       - 'tools/portable/**'
       - '.claude-plugin/**'
@@ -55,3 +59,9 @@ jobs:
           cd "$RUNNER_TEMP/pstack-skills-smoke"
           npx --yes skills add "$GITHUB_WORKSPACE/portable/pstack" --skill '*' --agent claude-code codex --copy --yes
           python3 "$GITHUB_WORKSPACE/tools/portable/check-install.py" "$RUNNER_TEMP/pstack-skills-smoke"
+      - name: Install Thermos for both agents in an isolated project
+        run: |
+          mkdir -p "$RUNNER_TEMP/thermos-skills-smoke"
+          cd "$RUNNER_TEMP/thermos-skills-smoke"
+          npx --yes skills add "$GITHUB_WORKSPACE/portable/thermos" --skill '*' --agent claude-code codex --copy --yes
+          python3 "$GITHUB_WORKSPACE/tools/portable/check-install.py" "$RUNNER_TEMP/thermos-skills-smoke" --package thermos
