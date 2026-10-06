@@ -1,4 +1,4 @@
-name: Validate portable pstack and Thermos
+name: Validate portable pstack, Thermos, and Mods
 
 on:
   push:
@@ -11,6 +11,7 @@ on:
       - 'README.md'
       - 'README_PORTABLE.md'
       - 'docs/thermos-*.md'
+      - 'docs/pstack-mods*.md'
       - '.gitattributes'
       - 'tools/portable/**'
       - '.claude-plugin/**'
@@ -26,6 +27,7 @@ on:
       - 'README.md'
       - 'README_PORTABLE.md'
       - 'docs/thermos-*.md'
+      - 'docs/pstack-mods*.md'
       - '.gitattributes'
       - 'tools/portable/**'
       - '.claude-plugin/**'
@@ -51,6 +53,16 @@ jobs:
       - run: python -m pip install PyYAML==6.0.3
       - run: python3 tools/portable/validate.py
       - run: python3 -m unittest discover -s tools/portable -p 'test_*.py'
+      - name: Validate Mods with pinned native Claude Code
+        env:
+          DISABLE_AUTOUPDATER: '1'
+          CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1'
+        run: |
+          curl -fsSL https://claude.ai/install.sh -o "$RUNNER_TEMP/install-claude.sh"
+          bash "$RUNNER_TEMP/install-claude.sh" 2.1.289
+          export PATH="$HOME/.local/bin:$PATH"
+          test "$(claude --version)" = '2.1.289 (Claude Code)'
+          bash tools/portable/check-mods.sh
       - run: bash -n tools/portable/sync-upstream.sh
       - run: sh -n portable/pstack/hooks/session-start.sh
       - name: Install the skills for both agents in an isolated project

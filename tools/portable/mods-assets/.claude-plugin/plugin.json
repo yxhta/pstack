@@ -1,0 +1,6 @@
+{
+  "name": "pstack-mods",
+  "version": "0.1.0",
+  "description": "Opt-in, snapshot-bound bug-fix evidence gates for Claude Code.",
+  "author": { "name": "yxhta" }
+}

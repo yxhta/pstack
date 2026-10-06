@@ -4,6 +4,8 @@ This is a fork of [cursor/plugins](https://github.com/cursor/plugins), maintaine
 
 For Thermos installation and review commands, see [Thermos for Claude Code and Codex](docs/thermos-portable.md).
 
+For an optional Claude-only bug-fix evidence pipeline, see [pstack Mods](docs/pstack-mods.md). It runs only after explicit opt-in and leaves the existing portable workflows unchanged.
+
 ## Install
 
 ### Skills CLI (Claude Code and Codex)

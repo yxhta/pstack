@@ -24,6 +24,11 @@ class PackageLayout:
     upstream: Path
     assets: Path
     published: Path
+    package_name: str | None = None
+
+    @property
+    def name(self) -> str:
+        return self.package_name or self.upstream.name
 
 
 @dataclass(frozen=True)
@@ -91,7 +96,9 @@ def prepare(text, name):
 
 
 def render_package(layout: PackageLayout, upstream_commit: str) -> ArtifactTree:
-    if layout.upstream.name == 'thermos':
+    if layout.name == 'pstack-mods':
+        return render_mods(layout, upstream_commit)
+    if layout.name == 'thermos':
         return render_thermos(layout, upstream_commit)
     tree = read_tree(layout.upstream)
     for name, artifact in list(tree.items()):
@@ -161,17 +168,7 @@ def render_package(layout: PackageLayout, upstream_commit: str) -> ArtifactTree:
 
 def add_overlay(tree: ArtifactTree, overlay: ArtifactTree, upstream_commit: str) -> ArtifactTree:
     version = json.loads(tree['.cursor-plugin/plugin.json'].data)['version']
-    digest = hashlib.sha256()
-    for name, artifact in sorted((tree | overlay).items()):
-        data = artifact.data
-        if name in ('.claude-plugin/plugin.json', '.codex-plugin/plugin.json'):
-            metadata = json.loads(data)
-            metadata.pop('version', None)
-            data = json.dumps(metadata, sort_keys=True).encode()
-        for value in (name.encode(), str(artifact.mode).encode(), data):
-            digest.update(len(value).to_bytes(8, 'big'))
-            digest.update(value)
-    package_version = version + '-portable.g' + upstream_commit[:12] + '.a' + digest.hexdigest()[:12]
+    package_version = version + '-portable.g' + upstream_commit[:12] + '.a' + package_digest(tree | overlay)
     for runtime in ('claude', 'codex'):
         name = f'.{runtime}-plugin/plugin.json'
         manifest = json.loads(overlay[name].data)
@@ -184,9 +181,54 @@ def add_overlay(tree: ArtifactTree, overlay: ArtifactTree, upstream_commit: str)
     return tree
 
 
+def package_digest(tree: ArtifactTree) -> str:
+    """Hash paths, executable modes, and content, excluding generated versions."""
+    digest = hashlib.sha256()
+    for name, artifact in sorted(tree.items()):
+        data = artifact.data
+        if name in ('.claude-plugin/plugin.json', '.codex-plugin/plugin.json'):
+            metadata = json.loads(data)
+            metadata.pop('version', None)
+            data = json.dumps(metadata, sort_keys=True).encode()
+        for value in (name.encode(), str(artifact.mode).encode(), data):
+            digest.update(len(value).to_bytes(8, 'big'))
+            digest.update(value)
+    return digest.hexdigest()[:12]
+
+
 THERMOS_NOTICE = ('On Claude Code or Codex, first read [the runtime adaptation]'
                   '(../thermos/references/runtime-adaptation.md). Apply its host substitutions to this skill.\n\n')
 THERMOS_ROLES = ('thermo-nuclear-review', 'thermo-nuclear-code-quality-review')
+MODS_VERSION = '0.1.0'
+MODS_REFERENCE_ROOT = 'references/thermos'
+MODS_THERMOS_FILES = ('LICENSE', *(
+    name for role in THERMOS_ROLES
+    for name in (f'skills/{role}/SKILL.md', f'agents/{role}-subagent.md')
+))
+
+
+def render_mods(layout: PackageLayout, upstream_commit: str) -> ArtifactTree:
+    """Build the opt-in Claude adapter with unmodified, pinned reviewer inputs."""
+    source = read_tree(layout.upstream)
+    tree = read_tree(layout.assets)
+    if any(name.split('/')[0] in ('.codex-plugin', '.cursor-plugin') for name in tree):
+        raise ValueError('The pstack-mods adapter must be Claude-only')
+    if any(name == MODS_REFERENCE_ROOT or name.startswith(MODS_REFERENCE_ROOT + '/')
+           or MODS_REFERENCE_ROOT.startswith(name + '/') for name in tree):
+        raise ValueError('Mods asset collides with generated Thermos references')
+    for name in MODS_THERMOS_FILES:
+        if name not in source:
+            raise ValueError(f'Missing Mods Thermos reference: {name}')
+        tree[f'{MODS_REFERENCE_ROOT}/{name}'] = source[name]
+    name = '.claude-plugin/plugin.json'
+    if name not in tree:
+        raise ValueError('Missing Mods Claude plugin manifest')
+    manifest = json.loads(tree[name].data)
+    if not isinstance(manifest, dict) or manifest.get('name') != 'pstack-mods':
+        raise ValueError('Mods Claude plugin name must be pstack-mods')
+    manifest['version'] = MODS_VERSION + '-mods.g' + upstream_commit[:12] + '.a' + package_digest(tree)
+    tree[name] = Artifact((json.dumps(manifest, indent=2) + '\n').encode(), tree[name].mode)
+    return tree
 
 
 def render_thermos(layout: PackageLayout, upstream_commit: str) -> ArtifactTree:
@@ -253,7 +295,12 @@ def verify_source(root: Path, upstream_commit: str, packages=('pstack',)) -> Non
 
 def prepare_package(layout: PackageLayout, upstream_commit: str, *, check: bool) -> None:
     destination = layout.published
-    if layout.upstream.name not in ('pstack', 'thermos') or destination.absolute() != layout.upstream.parent.absolute() / 'portable' / layout.upstream.name or destination.is_symlink() or destination.parent.is_symlink():
+    source_name = 'thermos' if layout.name == 'pstack-mods' else layout.name
+    expected_destination = layout.upstream.parent.absolute() / 'portable' / layout.name
+    if (layout.name not in ('pstack', 'thermos', 'pstack-mods')
+            or layout.upstream.name != source_name
+            or destination.absolute() != expected_destination
+            or destination.is_symlink() or destination.parent.is_symlink()):
         raise ValueError(f'Unsafe generated destination: {destination}')
     resolved = destination.resolve()
     for source in (layout.upstream.resolve(), layout.assets.resolve()):
@@ -269,7 +316,7 @@ def prepare_package(layout: PackageLayout, upstream_commit: str, *, check: bool)
     if not changed:
         return
     destination.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix=f'.{layout.upstream.name}-', dir=destination.parent) as temporary:
+    with tempfile.TemporaryDirectory(prefix=f'.{layout.name}-', dir=destination.parent) as temporary:
         staged = Path(temporary) / 'package'
         staged.mkdir()
         for name, artifact in desired.items():
@@ -305,6 +352,9 @@ def main():
     verify_source(ROOT, pin, packages=('pstack', 'thermos'))
     for package, assets in (('pstack', 'assets'), ('thermos', 'thermos-assets')):
         prepare_package(PackageLayout(ROOT / package, ROOT / 'tools/portable' / assets, ROOT / 'portable' / package), pin, check=args.check)
+    mods = PackageLayout(ROOT / 'thermos', ROOT / 'tools/portable/mods-assets',
+                         ROOT / 'portable/pstack-mods', package_name='pstack-mods')
+    prepare_package(mods, pin, check=args.check)
 
 
 if __name__ == '__main__':
