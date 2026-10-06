@@ -1,6 +1,6 @@
 {
   "name": "pstack-mods",
-  "version": "0.1.0-mods.ge43c7ee26e00.ac3ae83b6c36f",
+  "version": "0.1.0-mods.ge43c7ee26e00.abb144b390c35",
   "description": "Opt-in, snapshot-bound bug-fix evidence gates for Claude Code.",
   "author": {
     "name": "yxhta"

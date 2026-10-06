@@ -62,6 +62,27 @@ class ModsPackageTests(unittest.TestCase):
         self.generate(check=True)
         self.assertEqual(read_tree(self.layout.published), generated)
 
+    def test_native_type_sidecars_do_not_change_version_or_freshness(self):
+        self.generate()
+        original = self.version()
+        for name in prepare.MODS_TYPE_SIDECARS:
+            self.write(self.layout.published / name, 'native declarations')
+            self.write(self.assets / name, 'authoring declarations')
+        self.generate(check=True)
+        self.generate()
+        self.assertEqual(self.version(), original)
+        self.write(self.layout.published / '.claude-plugin/types/unexpected.js', 'throw new Error()')
+        with self.assertRaisesRegex(ValueError, 'Generated package drift'):
+            self.generate(check=True)
+
+    def test_native_type_sidecar_symlinks_are_still_rejected(self):
+        self.generate()
+        path = self.layout.published / '.claude-plugin/types/claude-code/index.d.ts'
+        path.parent.mkdir(parents=True)
+        path.symlink_to(self.source / 'LICENSE')
+        with self.assertRaisesRegex(ValueError, 'Unsupported symlink'):
+            self.generate(check=True)
+
     def test_hash_covers_assets_reference_bytes_modes_and_upstream_pin(self):
         self.generate()
         previous = self.version()

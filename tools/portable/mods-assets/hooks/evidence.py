@@ -16,7 +16,7 @@ LIMIT = 65536
 def git(cwd, *args, input=None):
     return subprocess.check_output(
         ['git', '-c', 'core.fsmonitor=false', '-c', 'core.untrackedCache=false', '-c', 'core.filemode=true', *args],
-        cwd=cwd, env={**os.environ, 'GIT_OPTIONAL_LOCKS': '0'}, stderr=subprocess.PIPE, input=input)
+        cwd=cwd, env={**os.environ, 'GIT_OPTIONAL_LOCKS': '0', 'GIT_NO_REPLACE_OBJECTS': '1'}, stderr=subprocess.PIPE, input=input)
 
 
 def inventory(root):
@@ -150,6 +150,68 @@ def run(cwd, request):
         return result
 
 
+def review_diff(cwd, base):
+    before = snapshot(cwd)
+    root = Path(before['root'])
+    base_files = {}
+    for entry in git(root, 'ls-tree', '-rz', base).split(b'\0'):
+        if entry:
+            header, name = entry.split(b'\t', 1)
+            mode, kind, oid = header.split()
+            if kind != b'blob' or mode not in (b'100644', b'100755'):
+                raise ValueError('Unsupported review baseline entry')
+            base_files[name] = (mode, oid)
+    _, others, current_paths = inventory(root)
+    current_paths = set(current_paths)
+    object_format = git(root, 'rev-parse', '--show-object-format').decode().strip()
+    changed = {}
+    for name in sorted(set(base_files) | current_paths):
+        path = root / os.fsdecode(name)
+        current = None
+        data = None
+        if name in current_paths and path.exists():
+            info = path.lstat()
+            if not stat.S_ISREG(info.st_mode):
+                raise ValueError('Only regular review files are supported')
+            data = path.read_bytes()
+            blob = hashlib.new(object_format, b'blob ' + str(len(data)).encode() + b'\0' + data)
+            mode = b'100755' if info.st_mode & 0o111 else b'100644'
+            current = (mode, blob.hexdigest().encode())
+        if base_files.get(name) != current:
+            changed[name] = (current, data if current else None)
+    if len(changed) > 100:
+        raise ValueError('Review exceeds the supported 100-file limit')
+    with tempfile.TemporaryDirectory(prefix='pstack-review-') as temporary:
+        directory = Path(temporary)
+        (directory / 'a').mkdir()
+        (directory / 'b').mkdir()
+        for name, (current, data) in changed.items():
+            if name in base_files:
+                mode, oid = base_files[name]
+                path = directory / 'a' / os.fsdecode(name)
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(git(root, 'cat-file', 'blob', oid.decode()))
+                path.chmod(0o755 if mode == b'100755' else 0o644)
+            if current:
+                path = directory / 'b' / os.fsdecode(name)
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(data)
+                path.chmod(0o755 if current[0] == b'100755' else 0o644)
+        result = subprocess.run(
+            ['git', '-c', 'core.filemode=true', 'diff', '--no-index', '--binary',
+             '--no-ext-diff', '--no-textconv', '--no-renames', '--no-color', '--src-prefix=', '--dst-prefix=', 'a', 'b'],
+            cwd=directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode not in (0, 1):
+            raise ValueError('Raw review diff failed: ' + result.stderr.decode(errors='replace'))
+        if len(result.stdout) > 200000:
+            raise ValueError('Review diff exceeds the supported 200000-byte limit')
+    if snapshot(root)['digest'] != before['digest']:
+        raise ValueError('Code changed while preparing the review diff')
+    return {'schema': 1, 'diff': result.stdout.decode('utf-8', errors='replace'),
+            'files': [str(root / os.fsdecode(name)) for name, (current, _) in changed.items() if current],
+            'untracked': [os.fsdecode(name) for name in others.split(b'\0') if name]}
+
+
 def main():
     action, cwd = sys.argv[1:3]
     if action == 'snapshot':
@@ -157,18 +219,7 @@ def main():
     elif action == 'run':
         result = run(cwd, json.loads(sys.argv[3]))
     elif action == 'diff':
-        base = sys.argv[3]
-        diff = git(cwd, 'diff', '--no-ext-diff', '--no-textconv', '--binary', base, '--')
-        if len(diff) > 200000:
-            raise ValueError('Review diff exceeds the supported 200000-byte limit')
-        untracked = git(cwd, 'ls-files', '--others', '--exclude-standard', '-z').split(b'\0')[:-1]
-        changed = git(cwd, 'diff', '--name-only', '-z', base, '--').split(b'\0')[:-1]
-        names = sorted(set(untracked + changed))
-        files = [str(Path(cwd) / os.fsdecode(name)) for name in names if (Path(cwd) / os.fsdecode(name)).is_file()]
-        if len(files) > 100:
-            raise ValueError('Review exceeds the supported 100-file limit')
-        result = {'schema': 1, 'diff': diff.decode('utf-8', errors='replace'),
-                  'files': files, 'untracked': [os.fsdecode(name) for name in untracked]}
+        result = review_diff(cwd, sys.argv[3])
     else:
         raise ValueError('Unknown evidence operation')
     print(json.dumps(result, ensure_ascii=True))

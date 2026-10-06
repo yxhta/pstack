@@ -31,6 +31,15 @@ if len(rows) != 1 or rows[0]['stage'] != 'off' or rows[0]['evidence']['reproduct
 if not Path(sys.argv[2]).read_text().startswith('// Written by Claude Code 2.1.289.'):
     raise SystemExit('Wrong generated native type version')
 PY
+python3 - "$root" "$scratch/plugin" <<'PYTHON'
+from pathlib import Path
+import sys
+root, loaded = map(Path, sys.argv[1:])
+sys.path.insert(0, str(root / 'tools/portable'))
+from prepare import read_mods_tree
+if read_mods_tree(root / 'portable/pstack-mods') != read_mods_tree(loaded):
+    raise SystemExit('Native loading changed package content beyond generated type declarations')
+PYTHON
 if [[ -n "${TSC_BIN:-}" ]]; then
   "$TSC_BIN" --noEmit -p "$scratch/plugin"
 else

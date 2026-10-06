@@ -62,11 +62,11 @@ A reload, session restart, `/clear`, or `/resume` never restores successful evid
 
 ## What the gates do and do not prove
 
-- The snapshot covers tracked files, index state, HEAD, and non-ignored untracked regular files. Ignored files, environment variables, external services, dependency caches, databases, and other repositories are outside it. Changes there require you to rerun or restart appropriately. Symlinks, submodules, unresolved merges, assume-unchanged/skip-worktree index flags, content filters, and working-tree encoding attributes are deliberately unsupported. Raw baseline bytes and Git modes are compared with the committed tree rather than trusting cached Git status.
+- The snapshot covers tracked files, index state, HEAD, and non-ignored untracked regular files. Ignored files, environment variables, external services, dependency caches, databases, and other repositories are outside it. Changes there require you to rerun or restart appropriately. Symlinks, submodules, unresolved merges, assume-unchanged/skip-worktree index flags, content filters, and working-tree encoding attributes are deliberately unsupported. Raw baseline bytes and Git modes are compared with the committed tree rather than trusting cached Git status. Review paths and patches also use raw before-and-after file contents and ignore Git replacement refs. A preserved modification time cannot hide a fix from the reviewers.
 - Checks run against the working directory, not an atomic filesystem snapshot. Changes observed between checks invalidate evidence. A malicious edit-and-restore race, altered host, or hostile plugin is outside this workflow's trust model.
 - Configured exit codes and failure text identify an observed test execution. They do not prove that the selected command is a meaningful test, that a suite covered every case, or that the test itself is honest.
 - Fresh child identity and observed reads establish independent execution and reading coverage. A clean model verdict remains a review judgment, not proof of bug absence. The reviews are local and pre-PR; PR discussion and external integration checks require separate work.
-- Reviews larger than 100 surviving changed files or a 200,000-byte diff block. A token-truncated or partial Read does not count as a complete file read. Reduce the review scope or use the ordinary portable workflow; do not label the incomplete gate verified.
+- Reviews larger than 100 changed files or a 200,000-byte diff block. A token-truncated or partial Read does not count as a complete file read. Reduce the review scope or use the ordinary portable workflow; do not label the incomplete gate verified.
 - Process output is retained up to 64 KiB per stream with explicit truncation flags. A child signal is distinguished from a test's nonzero exit.
 - Mods are early-access middleware. Unhandled errors, hook timeouts, other plugins, unloading the mod, or disabled Mods can bypass hooks. Catch handlers improve the normal failure path; they do not turn this into an enforceable security policy.
 - `Stop` only observes normal completion. It requests at most one continuation when evidence is missing, then pauses. It allows a wait for pending reviewers without claiming verification. It does not intercept every interruption or prevent a model from writing inaccurate prose.
@@ -74,7 +74,7 @@ A reload, session restart, `/clear`, or `/resume` never restores successful evid
 
 ## Maintain and verify
 
-Edit `tools/portable/mods-assets/`, then regenerate. Never edit `portable/pstack-mods/` directly. Its version hashes content and executable modes. Required Thermos source files and their license are copied unchanged from the repository's recorded upstream pin.
+Edit `tools/portable/mods-assets/`, then regenerate. Never edit `portable/pstack-mods/` directly. Its version hashes content and executable modes. Native-generated declarations under `.claude-plugin/types/` are excluded from that hash and the freshness check. The committed TypeScript config stays checked. Required Thermos source files and their license are copied unchanged from the repository's recorded upstream pin.
 
 ```sh
 python3 tools/portable/prepare.py

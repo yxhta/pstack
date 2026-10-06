@@ -185,6 +185,104 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(value['files'], [str(self.root / 'code.py')])
         self.assertIn('new mode 100755', value['diff'])
 
+    def test_review_diff_does_not_trust_git_stat_cache(self):
+        self.write('readme', 'old note\n')
+        self.git('add', 'readme')
+        self.git('commit', '-qm', 'readme')
+        self.git('config', 'core.trustctime', 'false')
+        self.git('config', 'core.checkStat', 'minimal')
+        path = self.root / 'code.py'
+        old = time.time_ns() - 5_000_000_000
+        os.utime(path, ns=(old, old))
+        self.git('update-index', '--refresh')
+        info = path.stat()
+        base = self.git('rev-parse', 'HEAD').decode().strip()
+        self.write('code.py', 'value = 2\n')
+        os.utime(path, ns=(info.st_atime_ns, info.st_mtime_ns))
+        self.write('readme', 'new note\n')
+        self.assertNotIn(b'code.py', self.git('diff', '--name-only', base))
+        result = evidence.review_diff(self.root, base)
+        self.assertEqual(result['files'], [str(self.root / name) for name in ('code.py', 'readme')])
+        self.assertIn('-value = 1', result['diff'])
+        self.assertIn('+value = 2', result['diff'])
+
+    def test_raw_review_diff_keeps_binary_deletion_and_mode_changes(self):
+        self.write('binary.dat', b'old\x00data'.decode('latin1'))
+        self.git('add', 'binary.dat')
+        self.git('commit', '-qm', 'binary baseline')
+        base = self.git('rev-parse', 'HEAD').decode().strip()
+        (self.root / 'binary.dat').write_bytes(b'new\x00data')
+        (self.root / 'code.py').unlink()
+        (self.root / '.gitignore').chmod(0o755)
+        result = evidence.review_diff(self.root, base)
+        self.assertEqual(result['files'], [str(self.root / name) for name in ('.gitignore', 'binary.dat')])
+        self.assertIn('GIT binary patch', result['diff'])
+        self.assertIn('deleted file mode', result['diff'])
+        self.assertIn('new mode 100755', result['diff'])
+
+    def test_raw_review_diff_handles_rename_and_file_directory_replacements(self):
+        base = self.git('rev-parse', 'HEAD').decode().strip()
+        self.git('mv', 'code.py', 'renamed.py')
+        (self.root / '.gitignore').unlink()
+        self.write('.gitignore/nested', 'new directory\n')
+        self.git('add', '-A')
+        result = evidence.review_diff(self.root, base)
+        self.assertEqual(result['files'], [str(self.root / name) for name in ('.gitignore/nested', 'renamed.py')])
+        self.assertIn('a/code.py', result['diff'])
+        self.assertIn('b/renamed.py', result['diff'])
+        self.assertIn('b/.gitignore/nested', result['diff'])
+        self.git('commit', '-qm', 'directory baseline')
+        base = self.git('rev-parse', 'HEAD').decode().strip()
+        (self.root / '.gitignore/nested').unlink()
+        (self.root / '.gitignore').rmdir()
+        self.write('.gitignore', 'restored file\n')
+        self.git('add', '-A')
+        result = evidence.review_diff(self.root, base)
+        self.assertEqual(result['files'], [str(self.root / '.gitignore')])
+        self.assertIn('a/.gitignore/nested', result['diff'])
+        self.assertIn('b/.gitignore', result['diff'])
+
+    def test_raw_review_diff_rejects_concurrent_code_change(self):
+        base = self.git('rev-parse', 'HEAD').decode().strip()
+        self.write('code.py', 'value = 2\n')
+        original = evidence.subprocess.run
+
+        def change_after_diff(command, *args, **kwargs):
+            result = original(command, *args, **kwargs)
+            if '--no-index' in command:
+                self.write('code.py', 'value = 3\n')
+            return result
+
+        with patch.object(evidence.subprocess, 'run', change_after_diff):
+            with self.assertRaisesRegex(ValueError, 'Code changed while preparing'):
+                evidence.review_diff(self.root, base)
+
+    def test_raw_review_diff_disables_configured_color(self):
+        base = self.git('rev-parse', 'HEAD').decode().strip()
+        self.write('code.py', 'value = 2\n')
+        with patch.dict(os.environ, {'GIT_CONFIG_COUNT': '1', 'GIT_CONFIG_KEY_0': 'color.ui', 'GIT_CONFIG_VALUE_0': 'always'}):
+            result = evidence.review_diff(self.root, base)
+        self.assertNotIn('\x1b[', result['diff'])
+        self.assertIn('+value = 2', result['diff'])
+
+    def test_git_replace_cannot_change_the_recorded_review_baseline(self):
+        self.write('readme', 'before\n')
+        self.git('add', 'readme')
+        self.git('commit', '-qm', 'original baseline')
+        base = self.git('rev-parse', 'HEAD').decode().strip()
+        self.write('code.py', 'value = 2\n')
+        self.git('commit', '-qam', 'replacement tree')
+        replacement = self.git('rev-parse', 'HEAD').decode().strip()
+        self.git('reset', '--mixed', base)
+        self.write('readme', 'after\n')
+        before = self.snap()
+        self.git('replace', base, replacement)
+        self.assertEqual(self.snap(), before)
+        result = evidence.review_diff(self.root, base)
+        self.assertEqual(result['files'], [str(self.root / name) for name in ('code.py', 'readme')])
+        self.assertIn('-value = 1', result['diff'])
+        self.assertIn('+value = 2', result['diff'])
+
     def test_diff_covers_committed_staged_unstaged_and_untracked(self):
         base = self.git('rev-parse', 'HEAD').decode().strip()
         self.write('code.py', 'value = 2\n')

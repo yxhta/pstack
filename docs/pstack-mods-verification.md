@@ -4,7 +4,7 @@ Verified on 2026-10-06 in an isolated Linux cloud checkout of `yxhta/pstack`, ba
 
 ## Results
 
-- The full Python suite passed **118 tests**, including 18 real-process/snapshot cases and 12 generated-package cases for the adapter.
+- The full Python suite passed **126 tests**, including 24 real-process/snapshot cases and 14 generated-package cases for the adapter.
 - The official Claude Code **2.1.289** test harness passed **85 tests** against the generated adapter.
 - Strict native plugin validation, TypeScript **5.9.3** with the runtime-generated 2.1.289 declarations, and a real no-inference `/pstack-bugfix status` load all passed.
 - Source integrity, normal and optimized Python validation, generation freshness, shell syntax, existing plugin schema validation, and whitespace checks passed.
@@ -20,6 +20,14 @@ The implementation was reviewed independently for correctness and code quality b
 The Python fixtures create disposable Git repositories and execute actual child processes. They verify a failing assertion followed by a passing fix, repeated execution, actual exit codes, missing programs, signals, timeouts, bounded output, and process-group cleanup after a terminated helper. They also exercise tracked, staged, untracked, deleted, mode-changed, and committed state; preserved-mtime edits; mid-scan changes; ignored outputs; unsupported index flags and filters; and raw clean-tree checks independent of Git's status cache.
 
 The native load smoke runs a registered command through the actual Claude binary. It prints the inactive status, generates that build's types, and performs no inference. The test script uses a fresh home and removes the temporary plugin copy afterward.
+
+## Additional review cycle
+
+A second requested self-review and a fresh adversarial review found two scope errors and one packaging issue. Git's cached timestamps could hide a raw source change from the review diff. Replacement refs could reinterpret the recorded baseline. A normal native load also created type declarations that the freshness check treated as package drift.
+
+Review scope now compares raw file bytes and modes with immutable baseline objects. It builds the patch from isolated before-and-after files, independent of the real Git index's stat cache. Fixtures cover preserved timestamps, replacement refs, binary files, deletion, rename, file-to-directory changes, modes, color configuration, and concurrent edits. Only the five known native declaration sidecars are excluded from package freshness. The committed TypeScript config and all unexpected files remain checked. The real native load smoke now verifies this boundary.
+
+The pstack workflow guided the review cycle. A single owner kept the state machine and runtime changes together; packaging and tests had separate owners. Independent reviewers checked complete diffs, the no-comments pass removed redundant narration, and every accepted defect received an executable regression before another full check.
 
 ## What was stubbed
 

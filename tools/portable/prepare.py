@@ -200,6 +200,11 @@ THERMOS_NOTICE = ('On Claude Code or Codex, first read [the runtime adaptation]'
                   '(../thermos/references/runtime-adaptation.md). Apply its host substitutions to this skill.\n\n')
 THERMOS_ROLES = ('thermo-nuclear-review', 'thermo-nuclear-code-quality-review')
 MODS_VERSION = '0.1.0'
+MODS_TYPE_SIDECARS = {'.claude-plugin/types/' + name for name in (
+    '.gitignore', 'tsconfig.json', 'claude-code/index.d.ts',
+    'claude-code-tools/index.d.ts', 'claude-code-mcp/index.d.ts',
+)}
+
 MODS_REFERENCE_ROOT = 'references/thermos'
 MODS_THERMOS_FILES = ('LICENSE', *(
     name for role in THERMOS_ROLES
@@ -207,10 +212,14 @@ MODS_THERMOS_FILES = ('LICENSE', *(
 ))
 
 
+def read_mods_tree(root: Path) -> ArtifactTree:
+    return {name: value for name, value in read_tree(root).items() if name not in MODS_TYPE_SIDECARS}
+
+
 def render_mods(layout: PackageLayout, upstream_commit: str) -> ArtifactTree:
     """Build the opt-in Claude adapter with unmodified, pinned reviewer inputs."""
     source = read_tree(layout.upstream)
-    tree = read_tree(layout.assets)
+    tree = read_mods_tree(layout.assets)
     if any(name.split('/')[0] in ('.codex-plugin', '.cursor-plugin') for name in tree):
         raise ValueError('The pstack-mods adapter must be Claude-only')
     if any(name == MODS_REFERENCE_ROOT or name.startswith(MODS_REFERENCE_ROOT + '/')
@@ -307,7 +316,7 @@ def prepare_package(layout: PackageLayout, upstream_commit: str, *, check: bool)
         if resolved == source or resolved.is_relative_to(source) or source.is_relative_to(resolved):
             raise ValueError('Generated destination overlaps an input')
     desired = render_package(layout, upstream_commit)
-    actual = read_tree(destination) if destination.exists() else {}
+    actual = (read_mods_tree(destination) if layout.name == 'pstack-mods' else read_tree(destination)) if destination.exists() else {}
     changed = sorted(name for name in desired.keys() | actual.keys() if desired.get(name) != actual.get(name))
     if check:
         if changed:
