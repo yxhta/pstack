@@ -64,6 +64,7 @@ def native_agents():
 
 def validate_resources(root, upstream):
     import json
+    import yaml
     from prepare import NOTICE, frontmatter
 
     validate_wrappers(root)
@@ -108,8 +109,16 @@ def validate_resources(root, upstream):
         metadata, portable = frontmatter(local_path(root, 'skills/' + source.parent.name + '/SKILL.md').read_text())
         if portable != NOTICE + original:
             raise ValueError(f'Upstream skill body changed: {source.parent.name}')
-        if any(key in metadata for key in ('disable-model-invocation', 'mode', 'icon', 'color', 'reminder')):
+        if any(key in metadata for key in ('mode', 'icon', 'color', 'reminder')):
             raise ValueError(f'Cursor metadata retained: {source.parent.name}')
+        if source.parent.name == 'poteto-help':
+            if metadata.get('disable-model-invocation') is not True:
+                raise ValueError('Poteto help must require explicit invocation')
+            policy = yaml.safe_load(local_path(root, 'skills/poteto-help/agents/openai.yaml').read_text())
+            if policy != {'policy': {'allow_implicit_invocation': False}} or policy['policy']['allow_implicit_invocation'] is not False:
+                raise ValueError('Poteto help Codex invocation policy differs')
+        elif 'disable-model-invocation' in metadata:
+            raise ValueError(f'Workflow skill cannot be routed: {source.parent.name}')
         if source.parent.name.startswith('principle-') and metadata.get('user-invocable') is not False:
             raise ValueError('Principle metadata classification differs')
     for source in (upstream / 'skills/poteto-mode/playbooks').glob('*.md'):

@@ -108,6 +108,24 @@
       "name": "cancel-before-cleanup",
       "prompt": "A writer has not returned. An interrupt request was accepted, but no terminal state is confirmed. Its worktree is next in cleanup.",
       "expected_output": "Check exposed status or wait for an actual terminal result before integrating or removing the worktree. An interrupt acknowledgement does not prove completion. Keep unresolved work visible as a gap."
+    },
+    {
+      "id": 19,
+      "name": "portable-help-only",
+      "prompt": "The user explicitly invokes poteto-help in a skills-only Codex install and asks how to get started. No model sheet exists. They have not asked to run a task.",
+      "expected_output": "Answer the help question, use fork installation and Codex invocation guidance, and offer setup at most once. Missing roles inherit the session model. Do not start a workflow, offer Cursor Custom Modes, claim a startup hook is installed, or require a new chat for each model-sheet change."
+    },
+    {
+      "id": 20,
+      "name": "help-missing-guides",
+      "prompt": "Poteto help links to ../../docs/guide/01-setup.md, but this skills-only install has no root docs. Explain how to install this fork and link sync-pstack-upstream and deslop.",
+      "expected_output": "Read available installed skills and fork README_PORTABLE. For absent upstream guides, use the bundled provenance pin and disclose unavailable reads. Link sync-pstack-upstream in yxhta/pstack and deslop at its recorded cursor-team-kit source. Do not fabricate upstream pstack paths or claim the installed snapshot is live main."
+    },
+    {
+      "id": 21,
+      "name": "upstream-two-seat-default",
+      "prompt": "The updated upstream Arena and Architect defaults each list two models. No portable model sheet exists and only the inherited model is available. An existing Interrogate configuration separately lists three inherit-parent entries.",
+      "expected_output": "Use two independent inherited-model candidates for each default panel and three reviewers for the configured Interrogate panel. Preserve the upstream or configured counts and disclose reduced model diversity. Do not send Cursor model slugs to Codex."
     }
   ]
 }

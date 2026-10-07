@@ -79,8 +79,10 @@ def frontmatter(text):
 
 def prepare(text, name):
     metadata, body = frontmatter(text)
-    for key in ('disable-model-invocation', 'mode', 'icon', 'color', 'reminder'):
+    for key in ('mode', 'icon', 'color', 'reminder'):
         metadata.pop(key, None)
+    if name != 'poteto-help':
+        metadata.pop('disable-model-invocation', None)
     metadata['name'] = name
     if name.startswith('principle-'):
         metadata['user-invocable'] = False
