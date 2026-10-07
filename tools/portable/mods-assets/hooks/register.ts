@@ -1,8 +1,9 @@
-import type { EngineInterface, Register, Timer } from 'claude-code'
+import type { EngineInterface, Next, Register, Timer, ToolCallInput, ToolCallResult } from 'claude-code'
 
 type Recipe = { repro: string[]; expectedExit: number; contains: string; verify: string[][]; timeoutMs: number }
 type Snapshot = { schema: 1; digest: string; root: string; head: string; files: number; clean: boolean }
 type Receipt = { snapshot: string; argv: string[]; exitCode: number; stdout: string; stderr: string; stdoutTruncated: boolean; stderrTruncated: boolean }
+type GuardCall = { epoch: number }
 type Role = 'correctness' | 'quality'
 type Review = { role: Role; snapshot: string; agentId: string; summary: string }
 type Pending = { role: Role; snapshot: string; epoch: number; reads: Set<string>; files: string[]; timer: Timer }
@@ -19,6 +20,7 @@ let busy = false
 let storeKey = ''
 let pending = new Map<string, Pending>()
 let poll: Timer | undefined
+const guardCalls = new Map<string, GuardCall>()
 
 function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Expected an object')
@@ -144,6 +146,37 @@ async function resetSession($: EngineInterface): Promise<void> {
   await show($)
 }
 
+async function guardTool($: EngineInterface, e: ToolCallInput, next: Next<'tool.call'>, call: GuardCall): Promise<ToolCallResult> {
+  const work = e.agentId ? pending.get(e.agentId) : undefined
+  if (e.agentId && !work && state.mode !== 'off') {
+    const agents = await $.agent.list()
+    if (agents.some(a => a.id === e.agentId && a.type === 'pstack-mods:bugfix-reviewer' && a.spawnedBy === 'pstack-mods')) return { deny: 'Reviewer is initializing or its evidence is stale; retry only after the runner records this child.' }
+  }
+  if (work) {
+    if (!['Read', 'Grep', 'Glob'].includes(e.tool)) return { deny: 'The independent reviewer is read-only' }
+    const result = await next(e)
+    if (e.tool === 'Read' && !result.deny && !result.isError && result.result && typeof result.result === 'object') {
+      const read = object(result.result)
+      if (read.type === 'text') {
+        const file = object(read.file)
+        if (typeof file.filePath === 'string' && file.startLine === 1 && file.numLines === file.totalLines && !file.truncatedByTokenCap) work.reads.add(file.filePath)
+      }
+    }
+    return result
+  }
+  if (state.mode !== 'off' && ['Edit', 'Write', 'NotebookEdit'].includes(e.tool)) {
+    if (state.mode !== 'active' || !state.repro) return { deny: 'Bug-fix gate: observe the failing reproduction before editing, or explicitly cancel this pipeline.' }
+    invalidate('An edit started; verification and reviews were invalidated')
+    const editEpoch = state.epoch
+    call.epoch = editEpoch
+    const result = await next(e)
+    try { await reconcile($) } catch (error) { if (state.epoch === editEpoch && state.mode === 'active') fail(String(error)) }
+    await show($)
+    return result
+  }
+  return next(e)
+}
+
 export const register: Register = (on) => {
   on('session.start', async ($, e, next) => {
     await resetSession($)
@@ -207,36 +240,16 @@ export const register: Register = (on) => {
 
   // A spawned child skips only its spawning hook. This separate guard still sees it.
   on('tool.call', async ($, e, next) => {
-    const work = e.agentId ? pending.get(e.agentId) : undefined
-    if (e.agentId && !work && state.mode !== 'off') {
-      const agents = await $.agent.list()
-      if (agents.some(a => a.id === e.agentId && a.type === 'pstack-mods:bugfix-reviewer' && a.spawnedBy === 'pstack-mods')) return { deny: 'Reviewer is initializing or its evidence is stale; retry only after the runner records this child.' }
-    }
-    if (work) {
-      if (!['Read', 'Grep', 'Glob'].includes(e.tool)) return { deny: 'The independent reviewer is read-only' }
-      const result = await next(e)
-      if (e.tool === 'Read' && !result.deny && !result.isError && result.result && typeof result.result === 'object') {
-        const read = object(result.result)
-        if (read.type === 'text') {
-          const file = object(read.file)
-          if (typeof file.filePath === 'string' && file.startLine === 1 && file.numLines === file.totalLines && !file.truncatedByTokenCap) work.reads.add(file.filePath)
-        }
-      }
-      return result
-    }
-    if (state.mode !== 'off' && ['Edit', 'Write', 'NotebookEdit'].includes(e.tool)) {
-      if (state.mode !== 'active' || !state.repro) return { deny: 'Bug-fix gate: observe the failing reproduction before editing, or explicitly cancel this pipeline.' }
-      invalidate('An edit started; verification and reviews were invalidated')
-      const editEpoch = state.epoch
-      const result = await next(e)
-      try { await reconcile($) } catch (error) { if (state.epoch === editEpoch && state.mode === 'active') fail(String(error)) }
-      await show($)
-      return result
-    }
-    return next(e)
+    const call = { epoch: state.epoch }
+    guardCalls.set(e.tool_use_id, call)
+    const result = await guardTool($, e, next, call)
+    guardCalls.delete(e.tool_use_id)
+    return result
   }).catch(async ($, e, next) => {
+    const call = guardCalls.get(e.tool_use_id)
+    guardCalls.delete(e.tool_use_id)
     if (state.mode === 'off') return next(e)
-    fail('Tool guard failed. Evidence is blocked; host hooks are not a security boundary.')
+    if (call?.epoch === state.epoch) fail('Tool guard failed. Evidence is blocked; host hooks are not a security boundary.')
     await show($)
     return { deny: 'Bug-fix guard failed; check pipeline status.' }
   })

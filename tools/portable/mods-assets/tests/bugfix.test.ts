@@ -43,6 +43,7 @@ function harness(on: On) {
     beforeSpawnReturn: undefined as undefined | ((id: string) => Promise<void>),
     beforeRubricRead: undefined as undefined | (() => Promise<void>),
     beforeAgentList: undefined as undefined | (() => Promise<void>),
+    beforeToolReply: undefined as undefined | (() => Promise<void>),
     snapshotReply: undefined as undefined | (() => ProcessResult | Promise<ProcessResult>),
     runReply: undefined as undefined | ((command: string[]) => ProcessResult | Promise<ProcessResult>),
     diffReply: undefined as undefined | (() => ProcessResult | Promise<ProcessResult>),
@@ -109,8 +110,9 @@ function harness(on: On) {
     ...(h.identityFailure === 'nested' ? { parentId: 'another-child' } : {}),
   })) }
   })
-  on('tool.call', ($, e) => {
+  on('tool.call', async ($, e) => {
     h.childCalls.push(e.tool)
+    if (h.beforeToolReply) await h.beforeToolReply()
     if (e.tool !== 'Read') return { result: 'host accepted' }
     if (h.readMode === 'deny') return { deny: 'Read denied' }
     if (h.readMode === 'error') return { isError: true, result: 'Read failed' }
@@ -119,6 +121,7 @@ function harness(on: On) {
   })
   return h
 }
+
 type Harness = ReturnType<typeof harness>
 function processEvidence(argv: string[], exitCode: number, stdout = '', extra: Record<string, unknown> = {}): ProcessResult {
   return jsonResult({ schema: 1, argv, exitCode, timedOut: false, stdout, stderr: '', stdoutTruncated: false, stderrTruncated: false, ...extra })
@@ -958,5 +961,33 @@ for (const boundary of ['diff', 'rubric preload', 'agent list'] as const) {
     for (const child of h.children) await finishChild($, child)
     await h.clock.advance(300000)
     expect((await action($, 'status')).stage).toBe('off')
+  })
+}
+
+for (const tool of ['Read', 'Edit'] as const) for (const replace of [false, true]) {
+  test(`${tool} guard failure ${replace ? 'does not block a replacement pipeline' : 'blocks its current pipeline'}`, async ($, on) => {
+    const h = harness(on)
+    await verifiedTests($, h)
+    if (tool === 'Read') await action($, 'review')
+    const entered = deferred(), released = deferred()
+    h.beforeToolReply = async () => { entered.resolve(); await released.promise; throw new Error('tool failed') }
+    const running = tool === 'Read'
+      ? childTool($, { tool, agentId: h.children[0]!.id, file_path: ROOT + '/repro.py' })
+      : $.tool.call({ tool, file_path: ROOT + '/repro.py', old_string: 'old', new_string: 'fixed' })
+    await entered.promise
+    if (replace) {
+      await command($, 'cancel')
+      h.snapshot = A
+      h.clean = true
+      expect((await command($, 'start ' + JSON.stringify(RECIPE))).stage).toBe('repro')
+    }
+    h.beforeToolReply = undefined
+    released.resolve()
+    expect((await running).deny).toMatch(/guard failed/)
+    const value = await action($, 'status')
+    expect(value.stage).toBe(replace ? 'repro' : 'blocked')
+    expect(value.failure).toBe(replace ? null : 'Tool guard failed. Evidence is blocked; host hooks are not a security boundary.')
+    expect(value.evidence.verification).toBe(null)
+    expect(value.evidence.reviews).toEqual({})
   })
 }
