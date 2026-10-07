@@ -8,6 +8,7 @@ from pathlib import Path
 import yaml
 
 from runtime import validate_resources
+from prepare import MODS_REFERENCE_ROOT, MODS_THERMOS_FILES, MODS_VERSION, read_tree
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -56,6 +57,29 @@ def validate_thermos():
     print('Validated 3 Thermos skills, both manifests, marketplaces, and 2 read-only Claude wrappers.')
 
 
+def validate_mods():
+    package = ROOT / 'portable/pstack-mods'
+    manifest = json.loads((package / '.claude-plugin/plugin.json').read_text())
+    require(manifest['name'] == 'pstack-mods', 'Invalid Mods Claude plugin name')
+    pin = json.loads((ROOT / 'tools/portable/upstream.json').read_text())['last_merged_sha']
+    require(re.fullmatch(rf'{re.escape(MODS_VERSION)}-mods\.g{pin[:12]}\.a[0-9a-f]{{12}}', manifest['version']),
+            'Invalid Mods content-addressed version')
+    require(not (package / '.codex-plugin').exists() and not (package / '.cursor-plugin').exists(),
+            'Mods must be a separate Claude-only plugin')
+    marketplace = json.loads((ROOT / '.claude-plugin/marketplace.json').read_text())
+    entries = [entry for entry in marketplace['plugins'] if entry['name'] == 'pstack-mods']
+    require(len(entries) == 1 and entries[0]['source'] == './portable/pstack-mods',
+            'Expected one separate Claude Mods marketplace entry')
+    codex = json.loads((ROOT / '.agents/plugins/marketplace.json').read_text())
+    require(not any(entry['name'] == 'pstack-mods' for entry in codex['plugins']),
+            'Claude Mods must not be advertised to Codex')
+    upstream = read_tree(ROOT / 'thermos')
+    references = read_tree(package / MODS_REFERENCE_ROOT)
+    require(references == {name: upstream[name] for name in MODS_THERMOS_FILES},
+            'Mods Thermos references must preserve the exact upstream files and executable modes')
+    print('Validated separate Claude-only Mods plugin, marketplace, version, and pristine Thermos references.')
+
+
 def main():
     subprocess.run([sys.executable, str(ROOT / 'tools/portable/prepare.py'), '--check'], check=True)
     validate_resources(ROOT / 'portable/pstack', ROOT / 'pstack')
@@ -99,6 +123,7 @@ def main():
     require((ROOT / 'portable/pstack/LICENSE').is_file(), 'Missing package license')
     print(f'Validated {len(skills)} shared skills, both manifests, agents, and sync configuration.')
     validate_thermos()
+    validate_mods()
 
 
 if __name__ == '__main__':

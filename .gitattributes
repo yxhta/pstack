@@ -3,3 +3,4 @@ README.md -whitespace
 portable/pstack/** -whitespace linguist-generated=true
 thermos/** -whitespace
 portable/thermos/** -whitespace linguist-generated=true
+portable/pstack-mods/** -whitespace linguist-generated=true

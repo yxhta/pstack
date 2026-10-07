@@ -33,3 +33,7 @@ build/
 
 # Logs
 *.log
+
+# Runtime-generated Claude Mods declarations
+/portable/pstack-mods/.claude-plugin/types/
+/tools/portable/mods-assets/.claude-plugin/types/

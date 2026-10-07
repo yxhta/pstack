@@ -14,6 +14,11 @@
       "name": "thermos",
       "source": "./portable/thermos",
       "description": "Independent correctness and code-quality branch reviews."
+    },
+    {
+      "name": "pstack-mods",
+      "source": "./portable/pstack-mods",
+      "description": "Opt-in Claude Mods bug-fix evidence gates. Validated against Claude Code 2.1.289."
     }
   ]
 }

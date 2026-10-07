@@ -1,0 +1,4 @@
+{
+  "description": "Opt-in bug-fix runner, independent reviewer guards, and evidence status.",
+  "modules": ["./register.ts"]
+}
