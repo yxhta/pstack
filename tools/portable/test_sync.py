@@ -25,12 +25,12 @@ class SyncTests(unittest.TestCase):
         (self.upstream / 'source.txt').write_text('upstream base\n')
         self.git(self.upstream, 'add', '.')
         self.git(self.upstream, 'commit', '-m', 'upstream base')
-        base = self.git(self.upstream, 'rev-parse', 'HEAD').strip()
+        self.base = self.git(self.upstream, 'rev-parse', 'HEAD').strip()
         self.command('git', 'clone', '--bare', str(self.upstream), str(self.origin))
         self.clone(self.checkout)
         pin = self.checkout / 'tools/portable/upstream.json'
         pin.parent.mkdir(parents=True)
-        pin.write_text(json.dumps({'repository': str(self.upstream), 'branch': 'main', 'last_merged_sha': base}))
+        pin.write_text(json.dumps({'repository': str(self.upstream), 'branch': 'main', 'last_merged_sha': self.base}))
         self.git(self.checkout, 'add', '.')
         self.git(self.checkout, 'commit', '-m', 'fork tooling')
         self.git(self.checkout, 'push', 'origin', 'main')
@@ -47,6 +47,8 @@ with open(os.environ['SYNC_TEST_LOG'], 'a') as stream:
 if sys.argv[1:3] == ['repo', 'view']:
     print('main')
 elif sys.argv[1:3] == ['pr', 'list']:
+    if os.environ.get('FAIL_PR_LIST') == '1':
+        sys.exit('simulated PR query failure')
     print(os.environ.get('OPEN_SYNC_PR', ''))
 elif sys.argv[1:3] == ['pr', 'create']:
     if os.environ.get('FAIL_PR_CREATE') == '1':
@@ -145,13 +147,56 @@ if os.environ.get('FAIL_STEP') == sys.argv[1]:
         for branch, commit in previous.items():
             self.assertEqual(current[branch], commit)
 
-    def test_open_pr_gate_leaves_checkout_unchanged(self):
+    def test_open_pr_blocks_pending_update_with_failure_and_no_writes(self):
+        before = self.git(self.checkout, 'rev-parse', 'HEAD')
+        pin = (self.checkout / 'tools/portable/upstream.json').read_bytes()
+        result = self.sync(OPEN_SYNC_PR='sync/pstack-upstream-existing')
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertIn('blocks upstream', result.stdout)
+        self.assertIn(self.incoming, result.stdout)
+        self.assertEqual(self.git(self.checkout, 'rev-parse', 'HEAD'), before)
+        self.assertEqual(self.git(self.checkout, 'branch', '--show-current').strip(), 'main')
+        self.assertEqual(self.git(self.checkout, 'status', '--porcelain'), '')
+        self.assertEqual((self.checkout / 'tools/portable/upstream.json').read_bytes(), pin)
+        self.assertEqual(self.git(self.origin, 'rev-parse', 'main'), before)
+        self.assertEqual(self.branches(), {})
+        self.assertFalse(any(call['tool'] == 'npx' for call in self.calls()))
+
+    def test_old_sync_branch_name_does_not_bypass_open_pr_gate(self):
+        branch = 'sync/pstack-upstream-' + self.base[:12]
+        result = self.sync(OPEN_SYNC_PR=branch)
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertIn(branch, result.stdout)
+        self.assertIn(self.incoming, result.stdout)
+        self.assertEqual(self.branches(), {})
+
+    def test_pr_query_failure_never_publishes(self):
+        before = self.git(self.checkout, 'rev-parse', 'HEAD')
+        result = self.sync(FAIL_PR_LIST='1')
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertIn('simulated PR query failure', result.stdout)
+        self.assertEqual(self.git(self.checkout, 'rev-parse', 'HEAD'), before)
+        self.assertEqual(self.branches(), {})
+        self.assertFalse(any(call['tool'] == 'npx' for call in self.calls()))
+
+    def test_upstream_fetch_failure_never_publishes(self):
+        before = self.git(self.checkout, 'rev-parse', 'HEAD')
+        self.upstream.rename(self.root / 'unavailable upstream')
+        result = self.sync()
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertEqual(self.git(self.checkout, 'rev-parse', 'HEAD'), before)
+        self.assertEqual(self.branches(), {})
+        self.assertFalse(any(call['tool'] == 'npx' for call in self.calls()))
+
+    def test_open_pr_does_not_fail_an_already_current_checkout(self):
+        self.git(self.checkout, 'fetch', str(self.upstream), 'main')
+        self.git(self.checkout, 'merge', '--no-ff', '--no-edit', self.incoming)
+        self.git(self.checkout, 'push', 'origin', 'main')
         before = self.git(self.checkout, 'rev-parse', 'HEAD')
         result = self.sync(OPEN_SYNC_PR='sync/pstack-upstream-existing')
         self.assertEqual(result.returncode, 0, result.stdout)
-        self.assertIn('already open', result.stdout)
+        self.assertIn('Already contains upstream ' + self.incoming, result.stdout)
         self.assertEqual(self.git(self.checkout, 'rev-parse', 'HEAD'), before)
-        self.assertEqual(self.git(self.checkout, 'branch', '--show-current').strip(), 'main')
         self.assertEqual(self.branches(), {})
         self.assertFalse(any(call['tool'] == 'npx' for call in self.calls()))
 

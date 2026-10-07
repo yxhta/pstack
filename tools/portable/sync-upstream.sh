@@ -22,11 +22,6 @@ if [[ "$(git rev-parse HEAD)" != "$(git rev-parse FETCH_HEAD)" ]]; then
   echo 'Run sync in a dedicated clean worktree at the latest origin default branch.' >&2
   exit 1
 fi
-open_pr=$(gh pr list --repo "$GH_REPO" --state open --base "$base" --json headRefName --jq '.[] | select(.headRefName | startswith("sync/pstack-upstream-")) | .headRefName')
-if [[ -n "$open_pr" ]]; then
-  echo "An upstream sync PR is already open: $open_pr. Merge or close it first."
-  exit 0
-fi
 upstream_repository=$(python3 -c "import json; print(json.load(open('tools/portable/upstream.json'))['repository'])")
 upstream_branch=$(python3 -c "import json; print(json.load(open('tools/portable/upstream.json'))['branch'])")
 git fetch --no-tags "$upstream_repository" "$upstream_branch"
@@ -34,6 +29,11 @@ upstream_sha=$(git rev-parse FETCH_HEAD)
 if git merge-base --is-ancestor "$upstream_sha" HEAD; then
   echo "Already contains upstream $upstream_sha."
   exit 0
+fi
+open_pr=$(gh pr list --repo "$GH_REPO" --state open --base "$base" --json headRefName --jq '.[] | select(.headRefName | startswith("sync/pstack-upstream-")) | .headRefName')
+if [[ -n "$open_pr" ]]; then
+  echo "An open sync PR blocks upstream $upstream_sha: $open_pr. Review and merge or close it before retrying." >&2
+  exit 1
 fi
 branch_base="sync/pstack-upstream-${upstream_sha:0:12}"
 branch="$branch_base"
