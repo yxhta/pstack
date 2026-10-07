@@ -1,4 +1,3 @@
-"""Packaging regressions for the independently installable Claude Mods adapter."""
 import json
 from pathlib import Path
 import shutil

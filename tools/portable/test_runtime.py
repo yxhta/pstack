@@ -41,7 +41,8 @@ class PackageTests(unittest.TestCase):
                        'hooks/session-start-context.md', 'LICENSE-CURSOR-TEAM-KIT', 'DESLOP_SOURCE.md',
                        'skills/deslop/LICENSE-CURSOR-TEAM-KIT', 'skills/deslop/DESLOP_SOURCE.md',
                        'skills/poteto-mode/references/LICENSE-CURSOR-TEAM-KIT',
-                       'skills/poteto-mode/references/DESLOP_SOURCE.md']
+                       'skills/poteto-mode/references/DESLOP_SOURCE.md',
+                       'skills/poteto-help/agents/openai.yaml']
             for name in dict.fromkeys(targets):
                 with self.subTest(name=name):
                     path = package / name
@@ -163,6 +164,12 @@ class MutationTests(unittest.TestCase):
                 (package / '.claude-plugin/plugin.json', './runtime-agents/poteto-agent.md', './runtime-agents/missing.md'),
                 (package / 'hooks/codex-hooks.json', 'startup|resume|clear|compact', 'startup'),
                 (package / 'skills/poteto-mode/SKILL.md', 'name: poteto-mode', 'disable-model-invocation: true\nname: poteto-mode'),
+                (package / 'skills/poteto-help/SKILL.md', 'disable-model-invocation: true', 'disable-model-invocation: false'),
+                (package / 'skills/poteto-help/SKILL.md', 'disable-model-invocation: true\n', ''),
+                (package / 'skills/poteto-help/SKILL.md', 'disable-model-invocation: true', 'disable-model-invocation: 1'),
+                (package / 'skills/poteto-help/agents/openai.yaml', 'allow_implicit_invocation: false', 'allow_implicit_invocation: true'),
+                (package / 'skills/poteto-help/agents/openai.yaml', 'allow_implicit_invocation: false', 'allow_implicit_invocation: 0'),
+                (package / 'skills/poteto-help/agents/openai.yaml', 'policy:\n  allow_implicit_invocation: false', 'policy: null'),
                 (package / 'skills/principle-model-the-domain/SKILL.md', 'user-invocable: false', 'user-invocable: true'),
                 (package / 'skills/deslop/SKILL.md', '# Remove AI code slop', '# Changed'),
                 (upstream / 'skills/setup-pstack/SKILL.md', 'hardest tasks:', 'strongest judgment:'),

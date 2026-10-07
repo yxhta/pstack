@@ -64,6 +64,11 @@
       "description": "Build apps, scripts, and automations with the TypeScript SDK."
     },
     {
+      "name": "origin-apps",
+      "source": "origin-apps",
+      "description": "Skills for building on the Cursor Origin API. Fetch the live spec first, then follow the Origin rules for credentials, scopes, webhooks, paging, and errors. Includes a skill that plans the port of an existing GitHub App."
+    },
+    {
       "name": "orchestrate",
       "source": "orchestrate",
       "description": "Fan large tasks out across parallel cloud agents with planners, workers, verifiers, and structured handoffs."
@@ -502,6 +507,16 @@
       "name": "posthog-mcp",
       "source": "third_party/posthog-mcp",
       "description": "Work with PostHog from chat: query product analytics and run SQL, manage feature flags and experiments, triage error tracking issues, and review session replays, surveys, and dashboards (URL-only connector to PostHog's hosted MCP server)."
+    },
+    {
+      "name": "quickbooks-online",
+      "source": "third_party/quickbooks-online",
+      "description": "Read invoices, bills, expenses, customers, accounts, and financial reports."
+    },
+    {
+      "name": "workday",
+      "source": "third_party/workday",
+      "description": "Look up workers, organizations, time off, payroll, and recruiting data in Workday."
     }
   ]
 }
