@@ -134,6 +134,11 @@
       "description": "Query, create, and update records in your org."
     },
     {
+      "name": "salesforce-headless-360",
+      "source": "third_party/salesforce-headless-360",
+      "description": "Manage records, users, and org setup across Salesforce."
+    },
+    {
       "name": "playwright",
       "source": "third_party/playwright",
       "description": "Navigate, click, screenshot, and test in a real browser."
