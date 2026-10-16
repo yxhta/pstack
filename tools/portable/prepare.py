@@ -120,7 +120,9 @@ def render_package(layout: PackageLayout, upstream_commit: str) -> ArtifactTree:
             target = 'skills/poteto-mode/references/portable-agents/' + Path(name).name
             if target in overlay:
                 raise ValueError(f'Portable asset collides with generated agent: {target}')
-            overlay[target] = artifact
+            overlay[target] = tree.pop(name)
+        elif re.fullmatch(r'docs/.+\.md', name):
+            tree[name] = Artifact(artifact.data.replace(b'](../../agents/', b'](../../skills/poteto-mode/references/portable-agents/'), artifact.mode)
     dependency = layout.upstream.parent / 'cursor-team-kit'
     for name in ('skills/deslop/SKILL.md', 'LICENSE'):
         path = dependency / name
@@ -271,7 +273,7 @@ def render_thermos(layout: PackageLayout, upstream_commit: str) -> ArtifactTree:
         target = f'skills/thermos/references/agents/{role}-subagent.md'
         if target in overlay:
             raise ValueError(f'Portable asset collides with agent reference: {target}')
-        overlay[target] = tree[name]
+        overlay[target] = tree.pop(name)
     return add_overlay(tree, overlay, upstream_commit)
 
 

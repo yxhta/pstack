@@ -68,6 +68,9 @@ class ThermosPackageTests(unittest.TestCase):
         self.assertEqual({p.parent.name for p in self.layout.published.glob('skills/*/SKILL.md')}, SKILLS)
         for name, original in source.items():
             with self.subTest(file=name):
+                if name.startswith('agents/'):
+                    self.assertNotIn(name, generated)
+                    continue
                 actual = generated[name]
                 if re.fullmatch(r'skills/[^/]+/SKILL.md', name):
                     self.assertEqual(actual.data.count(THERMOS_NOTICE.encode()), 1)
